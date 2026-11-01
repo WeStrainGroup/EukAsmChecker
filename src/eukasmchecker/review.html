@@ -177,8 +177,8 @@ window.addEventListener("scroll",hideReference,true);
 window.addEventListener("resize",hideReference);
 const thresholdColor=getComputedStyle(document.documentElement).getPropertyValue("--threshold-color").trim();
 let distributionMode="euk-other";
-const labelColor=i=>["#1d1d1f","#709487","#d2d2d7","#77777e","#a3a3a8","#b9b9bd"][i%6];
-const labelFill=i=>["#b6b6bb","#c6d8cf","#e7e7ea","#c9c9ce","#d9d9dd","#e1e1e4"][i%6];
+const labelColor=i=>["#1d1d1f","#709487","#96969e","#77777e","#a3a3a8","#b9b9bd"][i%6];
+const labelFill=i=>["#b6b6bb","#c6d8cf","#d0d0d5","#c9c9ce","#d9d9dd","#e1e1e4"][i%6];
 $("distributionMode").addEventListener("change",()=>{distributionMode=$("distributionMode").value;drag=null;$("tooltip").hidden=true;draw();});
 const availableLabels=[...new Set(["eukaryota","other","NA",...PROJECT.samples.flatMap(m=>Object.keys(m.groups))])];
 const normalizeLabels=v=>v==="all"?[...availableLabels]:typeof v==="string"?[v]:Array.isArray(v)?[...v]:null;
@@ -582,7 +582,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
       context.clearRect(0, 0, g.w, g.h);
       for (const index of order) {
         const point = hoverPoints[index];
-        context.globalAlpha = appearance === 1 && selectedLabels.has(point.r.label) ? .55 : .22;
+        context.globalAlpha = appearance === 1 && selectedLabels.has(point.r.label) ? .55 : .35;
         context.fillStyle = labelColor(point.label);
         context.beginPath();
         context.arc(point.x, point.y, 2, 0, Math.PI * 2);

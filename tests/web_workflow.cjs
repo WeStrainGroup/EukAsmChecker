@@ -76,7 +76,7 @@ for (const retain of [true, false]) for (const labels of [["eukaryota"], ["other
     }
   };
   renderContext.drawPoints(context, geometry, settings, geometry.x.f(500), geometry.y.f(10), geometry.y.f(20));
-  shown.forEach((alphas, index) => assert.deepEqual(alphas, [renderContext.result.annotated[index].keep ? .55 : .22]));
+  shown.forEach((alphas, index) => assert.deepEqual(alphas, [renderContext.result.annotated[index].keep ? .55 : .35]));
   const changedThresholds = {...settings, length: 800, coverage: 15, maxCoverage: 25};
   renderContext.result = EACCore.evaluate(renderRows, changedThresholds);
   renderContext.preparePointLayers(geometry, 1, changedThresholds);
@@ -105,7 +105,7 @@ renderContext.preparePointLayers(geometry, 1, eukOnly);
 assert.equal(renderContext.pointLayers.layers[0].canvas, fadedCanvas);
 assert.equal(rasterizedPoints - beforeSelection, overlapRows.length);
 assert.deepEqual(renderContext.pointLayers.layers[1].canvas.points.map(point => point.color), colors);
-for (const point of renderContext.pointLayers.layers[1].canvas.points) assert.equal(point.alpha, point.color === "0" ? .55 : .22);
+for (const point of renderContext.pointLayers.layers[1].canvas.points) assert.equal(point.alpha, point.color === "0" ? .55 : .35);
 renderContext.preparePointLayers({...geometry, w: 320}, 2, eukOnly);
 assert.deepEqual(Array.from(renderContext.pointLayers.order), firstOrder);
 renderContext.pointLayers = null;
