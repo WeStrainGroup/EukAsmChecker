@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EukAsmChecker</title>
+<style>
+:root{--threshold-color:#bd393d;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","PingFang SC",sans-serif;color:#1d1d1f;background:#fff;font-size:14px;font-synthesis:none}
+*{box-sizing:border-box}html,body{height:100%;height:100dvh;overflow:hidden}body{margin:0;display:flex;flex-direction:column;font-size:13px}
+button,input,select,textarea{font:inherit;border:1px solid #d2d2d7;border-radius:8px;background:#fff;color:inherit;padding:9px 12px}
+button{cursor:pointer}button:hover{background:#f5f5f7}button:disabled{opacity:.35;cursor:default}
+button.primary,button[aria-pressed=true]{background:#1d1d1f;border-color:#1d1d1f;color:#fff}button.primary:hover{background:#333}
+:focus-visible{outline:2px solid #555;outline-offset:3px}input[type=checkbox]{accent-color:#1d1d1f}
+input[type=number],textarea{width:100%;min-width:0}label,.control-label{font-size:12px;display:block;margin-bottom:7px}
+h1,h2{font-size:20px;letter-spacing:-.3px;font-weight:400;margin:0}.small{font-size:12px;line-height:1.6}.muted{color:#1d1d1f}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+header{flex:0 0 auto;padding:8px 32px;border-bottom:1px solid #e8e8ed;display:flex;align-items:center;justify-content:space-between;gap:16px}
+header h1{font-size:18px;line-height:22px;margin:0 0 2px}.header-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;line-height:16px}
+.header-meta #projectTitle,.header-meta #saveStatus{font-size:11px;line-height:16px}
+.header-meta #saveStatus:not(:empty){border-left:1px solid #d2d2d7;padding-left:10px;color:#6e6e73}
+header .toolbar{flex-wrap:nowrap}header .toolbar>button{height:32px;padding:6px 10px;font-size:12px}
+.language-toggle{display:inline-flex;border:1px solid #d2d2d7;border-radius:8px;padding:2px;gap:2px;background:#f5f5f7}
+.language-toggle button{border:0;padding:4px 8px;background:transparent;font-size:12px}
+.language-toggle button[aria-pressed=true]{background:#fff;color:#1d1d1f;box-shadow:0 1px 3px #00000013}
+.shell{--sidebar:230px;display:grid;grid-template-columns:var(--sidebar) 6px minmax(0,1fr);flex:1;min-height:0}
+aside{height:100%;min-height:0;min-width:0;padding:16px 20px;background:#fbfbfd;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-control{display:block;width:100%;height:32px;flex-shrink:0;margin:0 0 10px;padding:6px 10px;border:1px solid #d2d2d7;border-radius:8px;font-family:inherit;font-size:12px;line-height:18px;font-weight:400}
+#progress{margin-bottom:10px}
+#sampleList{flex:1;min-height:0;overflow:auto;scrollbar-gutter:stable;display:flex;flex-direction:column;gap:3px}
+.sample-item{border:0;text-align:left;padding:9px 8px;background:transparent;display:flex;justify-content:space-between;gap:7px;align-items:center;font-size:12px;flex-shrink:0}
+.sample-item[aria-current=true]{background:#eaeaec}.sample-item span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sample-item .sample-status{display:block;width:7px;height:7px;min-width:7px;flex:0 0 7px;border:1px solid #8e8e93;border-radius:50%;background:transparent}
+.sample-item .sample-status[data-reviewed=true]{background:#1d1d1f;border-color:#1d1d1f}
+#splitter{cursor:col-resize;touch-action:none;background:linear-gradient(to right,transparent 2px,#e5e5e8 2px,#e5e5e8 3px,transparent 3px);outline-offset:-1px}
+#splitter:hover,#splitter:focus-visible{background:#d2d2d7}
+main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;container-type:inline-size}
+.topline{position:sticky;top:0;z-index:3;background:rgba(255,255,255,.97);padding:8px 0;display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #eee;min-height:49px}
+.sample-heading{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0}.sample-heading h2{font-size:18px;line-height:24px;overflow-wrap:anywhere}
+#currentStatus{display:block;margin:0;font-size:11px;line-height:16px;white-space:nowrap}
+.topline .toolbar{flex-wrap:nowrap;flex-shrink:0}.topline .toolbar button{height:32px;padding:6px 10px;font-size:12px}
+.sample-retention{display:flex;align-items:center;gap:6px;margin:0;white-space:nowrap;font-size:12px}.sample-retention input{width:14px;height:14px;margin:0}
+.module{margin:0;border-bottom:1px solid #e8e8ed;font-size:12px;line-height:1.6}.module>summary{padding:12px 0;font-size:14px;font-weight:400;cursor:pointer}
+.module ol{margin-top:0;padding-left:20px}.module li{margin:5px 0}
+.filtering-layout{display:grid;grid-template-columns:160px minmax(0,1fr);gap:16px;align-items:start;padding-top:2px}
+.filtering-plot{min-width:0}.controls{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start;margin:0;padding:0 0 12px}
+.controls>div{min-width:0}.controls label,.controls .control-label{min-height:0;font-size:12px;line-height:18px}
+.controls input[type=number],#labels button,.resetline button{height:32px;padding:6px 8px;font-size:12px}
+#labels{display:flex;gap:5px;flex-wrap:wrap}#labels button{min-width:46px}
+#labels button:disabled{background:#f4f4f6;border-color:#e5e5e8;color:#a1a1a6;opacity:1}
+.resetline{display:flex;flex-direction:column;align-items:stretch;gap:0;min-width:0}
+.resetline #mode{font-size:11px;line-height:16px;min-height:16px;margin-bottom:7px}.resetline button{white-space:nowrap}
+.controls input[type=range]{appearance:none;-webkit-appearance:none;width:100%;height:18px;margin:6px 0 0;padding:0;border:0;background:transparent;cursor:pointer;accent-color:#555}
+.controls input[type=range]::-webkit-slider-runnable-track{height:2px;background:#d2d2d7;border-radius:1px}
+.controls input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:10px;height:10px;margin-top:-4px;border:0;border-radius:50%;background:#929297}
+.controls input[type=range]::-moz-range-track{height:2px;background:#d2d2d7;border-radius:1px}
+.controls input[type=range]::-moz-range-thumb{width:10px;height:10px;border:0;border-radius:50%;background:#929297}
+.controls input[type=range]::-moz-range-progress{height:2px;background:#d2d2d7}
+.controls input[type=range]:hover::-webkit-slider-thumb{background:#6e6e73}
+.distribution-control select{width:100%;height:32px;padding:5px 7px;font-size:11px}.plot-size-control>label{margin:0 0 7px;white-space:normal}
+.coverage-heading label{cursor:help}
+#reference{position:fixed;z-index:50;width:290px;max-width:calc(100vw - 24px);padding:12px 14px;margin:0;border:1px solid #dedee2;border-radius:8px;background:#fff;box-shadow:0 4px 16px #00000014;font-size:11px;line-height:1.6;pointer-events:none}
+.plotbar{display:flex;align-items:center;flex-wrap:wrap;margin-left:auto;margin-right:auto;padding-left:66px}
+.legend{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px}
+.legend-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:1px}
+.threshold{color:var(--threshold-color);display:inline-flex;align-items:center;gap:4px}.threshold-line{width:20px;height:10px;flex:none}.threshold-line line{stroke:currentColor;stroke-width:1.5;stroke-dasharray:6 4}
+#plot{position:relative;min-height:0;touch-action:none;margin:4px auto 0;width:100%}canvas{width:100%;height:100%;display:block}
+.tooltip{position:absolute;pointer-events:none;background:#1d1d1f;color:#fff;border-radius:8px;padding:10px 13px;white-space:pre-line;font-size:12px;line-height:1.7;max-width:min(450px,100%);overflow-wrap:anywhere}
+#summaryModule[open]>summary{padding-bottom:2px}.overview{overflow-x:auto;margin:0 0 8px;font-variant-numeric:tabular-nums}
+.overview-table{width:100%;table-layout:auto;border-collapse:collapse;font-size:12px;line-height:1.6}
+.overview-table th,.overview-table td{padding:5px 7px;text-align:right;vertical-align:middle;font-weight:400;white-space:nowrap}
+.overview-table th:first-child{text-align:left;padding-left:0}.overview-table td:last-child,.overview-table th:last-child{padding-right:0}
+.overview-table thead th,.overview-table thead td{border-bottom:1px solid #e8e8ed;padding-top:0;padding-bottom:4px}
+.group-value,.group-value small{font:inherit;color:inherit;white-space:nowrap}.group-value small{margin-left:3px}
+.distribution-summary tr:first-child th,.distribution-summary tr:first-child td{border-top:1px solid #e8e8ed;padding-top:8px}
+.reviewline{margin:0 0 12px}textarea{height:52px;resize:vertical;font-size:12px}
+#message:empty{display:none}#message{background:#f5f5f7;border-left:3px solid var(--threshold-color);padding:12px 16px;margin-top:14px;line-height:1.6;font-size:13px}
+#loading{padding:40px;text-align:center;color:#6e6e73}code{font-family:ui-monospace,monospace;overflow-wrap:anywhere}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}[hidden]{display:none!important}
+@media(max-width:1000px){
+ main{padding:0 26px 22px}.overview-table{font-size:10px;letter-spacing:-.1px}.overview-table th,.overview-table td{padding-left:1px;padding-right:1px}.group-value small{margin-left:2px}
+}
+@media(max-width:720px){
+ header{padding-left:18px;padding-right:18px;gap:8px;flex-wrap:wrap}header .toolbar{gap:6px}.shell{--sidebar:165px}
+ aside{padding:12px}main{padding:0 18px 20px}.topline{flex-wrap:wrap}.topline .toolbar button{flex:1}.sample-heading{gap:4px 10px}
+}
+@container(max-width:760px){.topline{flex-wrap:wrap;gap:6px}.topline .toolbar{margin-left:auto}}
+@container(max-width:679px){
+ .filtering-layout{display:block}.controls{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ .controls label,.controls .control-label,.resetline #mode{min-height:32px;font-size:11px;line-height:16px}
+}
+@container(max-width:534px){.controls{grid-template-columns:repeat(2,minmax(0,1fr))}.resetline{max-width:110px}.plotbar{padding-left:0}}
+</style></head><body>
+<header><div><h1 data-i18n="title">EukAsmChecker</h1><div class="header-meta"><div id="projectTitle" class="small muted"></div><div id="saveStatus" class="small muted" aria-live="polite"></div></div></div><div><div class="toolbar"><div class="language-toggle" role="group" aria-label="Language"><button id="langEn" type="button" aria-pressed="true">English</button><button id="langZh" type="button" aria-pressed="false">中文</button></div><button id="restore" type="button" data-i18n="restore">Import decisions</button><button id="save" class="primary" type="button" data-i18n="save">Save decisions</button><input id="restoreFile" type="file" accept=".json" hidden></div></div></header>
+<div class="shell"><aside><label class="sr-only" for="search" data-i18n="search">Search samples</label><input id="search" class="sidebar-control" type="search"><button id="onlyPending" class="sidebar-control" type="button" aria-pressed="false" data-i18n="onlyPending">Unreviewed only</button><button id="markAll" class="sidebar-control" type="button" disabled data-i18n="markAll">Mark all reviewed</button><div id="progress" class="small muted" aria-live="polite"></div><nav id="sampleList" aria-label="Project samples"></nav></aside><div id="splitter" role="separator" aria-orientation="vertical" aria-label="Resize sample sidebar" tabindex="0" aria-valuemin="150" aria-valuemax="520" aria-valuenow="230"></div>
+<main><div id="message" role="alert"></div><div class="topline"><div class="sample-heading"><h2 id="chartTitle"></h2><span id="currentStatus"></span></div><div class="toolbar"><label class="sample-retention"><input id="retainSample" type="checkbox" checked disabled><span data-i18n="retainSample">Retain sample</span></label><button id="previous" type="button" data-i18n="previous">Previous sample</button><button id="confirm" class="primary" type="button" disabled data-i18n="confirm">Confirm &amp; next</button></div></div><div id="loading"></div>
+<div id="sampleContent" hidden>
+<details class="module" id="filteringModule" open><summary data-i18n="filteringTitle">Filtering</summary>
+<div class="filtering-layout"><div class="controls"><div class="threshold-control"><label for="length" data-i18n="minLength">Minimum length (bp)</label><input id="length" type="number" min="0" step="1"><input id="lengthRange" type="range" min="0" max="1000"></div><div class="threshold-control"><div class="coverage-heading"><label id="coverageHeading" for="coverage" data-i18n="minCoverage" tabindex="0" aria-describedby="reference">Minimum coverage (×)</label><div id="reference" role="tooltip" hidden></div></div><input id="coverage" type="number" min="0" step="1"><input id="coverageRange" type="range" min="0" max="1000"></div><div class="threshold-control"><label for="maxCoverage" data-i18n="maxCoverage">Maximum coverage (×)</label><input id="maxCoverage" type="number" min="0" step="1"><input id="maxCoverageRange" type="range" min="0" max="1000"></div><div class="label-control"><span class="control-label" id="labelTitle" data-i18n="labels">EukContigMiner (ECM) labels</span><div id="labels" role="group" aria-labelledby="labelTitle"></div></div><div class="resetline"><span id="mode"></span><button id="reset" type="button" data-i18n="reset">Reset defaults</button></div><div class="distribution-control"><label for="distributionMode" data-i18n="distributionMode">Distributions</label><select id="distributionMode"><option value="filter" data-i18n="distributionFilter">filtering</option><option value="label" data-i18n="distributionLabels">all labels</option><option value="euk-other" selected data-i18n="distributionEukOther">euk + other</option></select></div><div class="plot-size-control"><label for="plotPercent" data-i18n="plotSizeLabel">Plot size (%)</label><input id="plotPercent" type="number" min="50" max="100" step="1" value="100"></div></div>
+<div class="filtering-plot"><div class="plotbar"><div class="legend" id="legend"></div></div>
+<div id="plot"><canvas id="canvas" role="img"></canvas><div id="tooltip" class="tooltip" role="tooltip" hidden></div></div>
+</div></div>
+</details>
+<details class="module" id="summaryModule" open><summary id="summaryTitle" data-i18n="summaryTitle">Summary</summary>
+<section class="overview" aria-live="polite">
+<table class="overview-table" aria-labelledby="summaryTitle">
+<thead><tr><td></td><th data-i18n="originalColumn">Original</th><th data-i18n="retained">Retained</th><th data-i18n="removed">Removed</th></tr></thead>
+<tbody id="groupSummary"></tbody>
+<tbody class="distribution-summary">
+<tr><th scope="row" data-i18n="coverageStats">Reads coverage (×): median; range</th><td id="originalCoverage"></td><td id="retainedCoverage"></td><td id="removedCoverage"></td></tr>
+<tr><th scope="row" data-i18n="lengthStats">Sequence length (bp): median; range</th><td id="originalLength"></td><td id="retainedLength"></td><td id="removedLength"></td></tr>
+</tbody></table>
+</section></details>
+<details class="module" id="noteModule" open><summary id="noteTitle" data-i18n="note">Note</summary><div class="reviewline"><textarea id="note" aria-labelledby="noteTitle"></textarea></div></details>
+<details class="module" id="ruleModule"><summary data-i18n="rulesTitle">Rule</summary><ul><li data-i18n="ruleReference"></li><li id="labelHint" data-i18n="ruleThreshold"></li><li data-i18n="ruleDisplay"></li><li data-i18n="ruleInterpretation"></li><li data-i18n="ruleOutput"></li></ul><p><a href="https://github.com/WeStrainGroup/EukAsmChecker#filtering-rules" target="_blank" rel="noopener" data-i18n="fullDocumentation">Full methods and file formats</a></p></details>
+</div></main></div>
+<script>
+"use strict";
+const PROJECT=/*PROJECT_MANIFEST*/null;
+const C={
+ reference(rows){const v=rows.filter(r=>r.length>10000&&r.label==="eukaryota").map(r=>r.coverage).sort((a,b)=>a-b),n=v.length,m=n?v[Math.floor(n/2)]/2+v[Math.floor((n-1)/2)]/2:null;return{n,median:m,min:n?v[0]:null,max:n?v[n-1]:null,cutoff:m===null?null:Math.round(Math.max(m/25,10))};},
+ reasons(r,s){if(s.retain_sample===false)return ["excluded_sample"];const a=[];if(r.length<s.length)a.push("short_length");if(r.coverage<s.coverage)a.push("low_coverage");if(s.maxCoverage!==null&&s.maxCoverage!==undefined&&r.coverage>s.maxCoverage)a.push("high_coverage");if(!s.labels.includes(r.label))a.push("excluded_label");return a;},
+ evaluate(rows,s){const groups={};let kept=0,bp=0,keptBp=0;const annotated=rows.map(r=>{const why=this.reasons(r,s),keep=!why.length,g=groups[r.label]??=( {count:0,bp:0,kept:0,keptBp:0});g.count++;g.bp+=r.length;bp+=r.length;if(keep){kept++;keptBp+=r.length;g.kept++;g.keptBp+=r.length;}return{keep,reasons:why};});return{annotated,groups,count:rows.length,kept,bp,keptBp};}
+};
+(async () => {
+const $=id=>document.getElementById(id),format=n=>Math.round(n).toLocaleString("en-US"),compact=n=>String(Math.round(n)),pct=(n,d)=>d?Math.round(100*n/d)+"%":"—",mb=n=>(n/1e6).toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1});
+const translations={
+en:{
+fullDocumentation:"Full methods and file formats",
+serverSaved:"Progress saved on this computer",savedTo:"Saved to ",saveFailed:"Save failed. ",saveConflict:"Decisions changed in another tab. Reload before continuing.",
+maxCoverage:"Maximum coverage (×)",adjustMaxCoverage:"Adjust maximum coverage",high_coverage:"coverage above maximum",
+markAll:"Mark all reviewed",markingAll:"Marking reviewed…",previousShortcut:"Previous sample (←)",confirmShortcut:"Confirm & next (→)",batchDone:(n,skip)=>n+" sample"+(n===1?"":"s")+" marked reviewed"+(skip?"; "+skip+" sample"+(skip===1?" still needs":"s still need")+" valid filters.":"."),
+retainSample:"Retain sample",sampleExcluded:"Sample excluded",confirmExcluded:"Confirm exclusion & next",excluded_sample:"sample excluded",
+distributionMode:"Distributions",distributionFilter:"filtering",distributionLabels:"all labels",distributionEukOther:"euk + other",
+inactiveLabels:"Greyed out: no sequences meet the length and coverage thresholds.",noEligible:"No sequences meet the current length and coverage thresholds.",summaryTitle:"Summary",filteringTitle:"Filtering",allSequences:"All sequences",labelled:"Labelled ",coverageStats:"Reads coverage (×): median; range",lengthStats:"Sequence length (bp): median; range",summaryHelp:"Summary cells show sequence count; total length (Mb). Percentages use the original count or length in the same row. Coverage and length statistics show median; minimum–maximum. Each sequence has equal weight.",originalColumn:"Original",resizeSidebar:"Resize sample sidebar",plotSizeLabel:"Plot size (%)",original:"Before filtering",
+ruleDisplay:"Precision: coverage is the per-sequence mean. Displayed values are rounded; filtering uses original values and includes threshold endpoints.",
+ruleDistribution:"Distribution view and plot size control the display.",
+title:"EukAsmChecker",language:"Language",restore:"Import decisions",save:"Save decisions",search:"Search samples",onlyPending:"Unreviewed only",samples:"samples",reviewed:"Reviewed",unreviewed:"Unreviewed",previous:"Previous sample",confirm:"Confirm & next",confirmEmpty:"Confirm removal of all & next",minLength:"Minimum length (bp)",minCoverage:"Minimum coverage (×)",labels:"EukContigMiner (ECM) labels",reset:"Reset defaults",note:"Note",notePlaceholder:"Record the rationale for this sample",rulesTitle:"Rule",
+ruleReference:"Defaults: minimum length 500 bp; minimum coverage = round(max(reference median / 25, 10)). The reference set contains original sequences labelled euk with length >10 kb. If empty, set the minimum manually. The default maximum removes nothing.",
+ruleThreshold:"Retention: sequences must meet the length, coverage and label filters. Excluding a sample removes all its sequences. Greyed labels have no eligible sequences.",
+ruleLabels:"Label selection is an additional AND condition: retain a sequence only if its label is among the selected labels. All labels are selected by default. Any nonempty subset can be selected. NA means that no ECM classification is available; in this dataset it is the native output for sequences <500 bp. All original sequences are plotted and counted, without subsampling.",
+ruleOutput:"Confirm each sample and save decisions before applying the filters.",
+ruleInterpretation:"ECM labels: predictions are less reliable for short contigs (500–1,000 bp, test F1 ≈0.9 at 1% eukaryotic prevalence). Short contigs in the main cluster may be labelled other; consider coverage too. Below 500 bp, labels remain NA.",
+autoSaved:"Progress saved in this browser",saveBackup:"Use Save decisions to back up your progress",restored:"Review progress restored",noMatches:"No matching samples",loading:"Loading sample…",loadFailed:"Sample could not be loaded",loadHelp:"Keep index.html and the data directory together.",wrongData:"Sample data do not match the project manifest.",wrongStats:"Sample statistics do not match the project manifest.",wrongDocument:"Decisions do not match this dataset.",wrongSample:"Sample or input fingerprint mismatch: ",wrongFields:"Invalid review fields: ",wrongThresholds:"Invalid thresholds: ",wrongReviewed:"Reviewed sample has invalid parameters or counts: ",restoredMismatch:"Restored counts differ from the current filters; this sample is now unreviewed.",allDone:"All samples reviewed. Save your decisions.",lastSample:"Last sample. Some samples remain unreviewed.",autoRestoreFailed:"Automatic restore failed: ",restoreHelp:" Import your exported decisions to restore progress.",invalid:"Set valid thresholds and select at least one label.",defaultMode:"Default thresholds",manualMode:"Custom filters",threshold:"Threshold",faded:"Faded = removed",xAxis:"Sequence length (bp)",yAxis:"Reads coverage (×)",plotAlt:"Sequence length versus reads coverage, grouped by ECM label. Drag red threshold lines to change filters.",adjustLength:"Adjust minimum length",adjustCoverage:"Adjust minimum coverage",pendingThresholds:"Pending: set valid filters",retained:"Retained",removed:"Removed",passes:"meets all selected criteria",short_length:"length below minimum",low_coverage:"coverage below minimum",excluded_label:"ECM label not selected",noReference:"No original sequences have both ECM label euk and length >10,000 bp. A reference median and range cannot be estimated; set the minimum coverage manually.",
+reference:(n,mn,lo,hi,cut)=>"The reference set contains "+n+" original sequences labelled euk with length >10 kb. Their median reads coverage is "+mn+"× (range: "+lo+"–"+hi+"×). The default minimum coverage is "+cut+"×."
+},
+zh:{
+fullDocumentation:"完整方法与文件格式",
+serverSaved:"进度已保存到当前计算平台",savedTo:"已保存到 ",saveFailed:"保存失败。",saveConflict:"其他页面已修改审阅决定，请刷新后继续。",
+maxCoverage:"最高 coverage（×）",adjustMaxCoverage:"调整最高 coverage",high_coverage:"coverage 高于上限",
+markAll:"全部标记为已审阅",markingAll:"正在标记…",previousShortcut:"上一样本（←）",confirmShortcut:"确认并下一样本（→）",batchDone:(n,skip)=>"已将 "+n+" 个样本标记为已审阅"+(skip?"；"+skip+" 个样本仍需设置有效筛选条件。":"。"),
+retainSample:"保留样本",sampleExcluded:"已排除样本",confirmExcluded:"确认排除并继续",excluded_sample:"整个样本已排除",
+distributionMode:"分布",distributionFilter:"筛选状态",distributionLabels:"全部标签",distributionEukOther:"euk + other",
+inactiveLabels:"灰色标签：没有片段满足当前长度及 coverage 阈值。",noEligible:"没有片段满足当前长度及 coverage 阈值。",summaryTitle:"摘要",filteringTitle:"筛选",allSequences:"全部片段",labelled:"标签为 ",coverageStats:"Reads coverage（×）：中位数；范围",lengthStats:"片段长度（bp）：中位数；范围",summaryHelp:"摘要单元格依次显示片段数；总长度（Mb）。百分比分别以同行原始片段数或总长度为分母。Coverage 和长度统计依次显示中位数；最小值–最大值，每条片段等权。",originalColumn:"原始",resizeSidebar:"调整样本侧栏宽度",plotSizeLabel:"图形大小（%）",original:"筛选前",
+ruleDisplay:"数值精度：coverage 为逐序列平均值。显示时取整，筛选使用原始值，包含阈值端点。",
+ruleDistribution:"分布模式和图形大小控制显示。",
+title:"EukAsmChecker",language:"语言",restore:"导入审阅结果",save:"保存审阅结果",search:"搜索样本",onlyPending:"只看未审阅",samples:"个样本",reviewed:"已审阅",unreviewed:"未审阅",previous:"上一样本",confirm:"确认并下一样本",confirmEmpty:"确认全部移除并继续",minLength:"最小长度（bp）",minCoverage:"最低 coverage（×）",labels:"EukContigMiner（ECM）标签",reset:"恢复默认设置",note:"备注",notePlaceholder:"记录这个样本的筛选依据",rulesTitle:"规则",
+ruleReference:"默认值：最小长度 500 bp；最低 coverage = round(max(参考中位数 / 25, 10))。参考集合为原始序列中标记为 euk 且长度 >10 kb 的序列；为空时需手动指定下限。默认上界不移除序列。",
+ruleThreshold:"保留条件：序列须同时满足长度、coverage 和标签筛选；排除样本则移除其全部序列。灰色标签表示没有符合阈值的序列。",
+ruleLabels:"标签选择是额外的 AND 条件：片段标签必须属于所选标签之一。默认选中全部标签，可选任意非空组合。NA 表示没有可用的 ECM 分类；在本数据集中，它是 <500 bp 片段的原生输出。所有原始片段均参与绘图和统计，不进行抽样。",
+ruleOutput:"逐样本确认并保存 decisions，再应用筛选。",
+ruleInterpretation:"ECM 标签：短序列预测较不可靠（500–1,000 bp、真核比例 1% 时测试 F1 约 0.9），主簇内短序列可能被标为 other，需结合 coverage 判断。500 bp 以下保留 NA。",
+autoSaved:"进度已保存在此浏览器",saveBackup:"请导出审阅结果备份进度",restored:"已恢复审阅进度",noMatches:"没有匹配的样本",loading:"正在读取样本…",loadFailed:"样本读取失败",loadHelp:"请保持 index.html 与 data 文件夹在同一目录。",wrongData:"样本数据与项目清单不匹配。",wrongStats:"样本统计与项目清单不一致。",wrongDocument:"审阅文件与当前项目数据不匹配。",wrongSample:"样本或输入指纹不匹配：",wrongFields:"审阅字段无效：",wrongThresholds:"阈值无效：",wrongReviewed:"已审阅样本缺少有效参数或统计：",restoredMismatch:"恢复的统计与当前筛选条件不一致，该样本已标为未审阅。",allDone:"全部样本已审阅，请导出审阅结果。",lastSample:"已到最后一个样本，仍有样本尚未审阅。",autoRestoreFailed:"自动恢复失败：",restoreHelp:"可导入已保存的审阅文件恢复进度。",invalid:"请设置有效阈值并选择至少一个标签。",defaultMode:"默认阈值",manualMode:"已手动调整筛选条件",threshold:"阈值",faded:"淡色 = 移除",xAxis:"片段长度（bp）",yAxis:"Reads coverage（×）",plotAlt:"按 ECM 标签区分的长度与 reads coverage 散点图，可拖动红色阈值线调整筛选条件。",adjustLength:"调整最小长度",adjustCoverage:"调整最低 coverage",pendingThresholds:"待判断：请设置有效筛选条件",retained:"保留",removed:"移除",passes:"满足全部所选条件",short_length:"长度低于下限",low_coverage:"coverage 低于下限",excluded_label:"未选择该 ECM 标签",noReference:"没有同时满足 ECM 标签为 euk 且长度 >10,000 bp 的原始片段，无法计算参考中位数和范围；请手动设置最低 coverage。",
+reference:(n,mn,lo,hi,cut)=>"参考集合包含 "+n+" 条标签为 euk 且长度 >10 kb 的原始序列。它们的 reads coverage 中位数为 "+mn+"×，范围为 "+lo+"–"+hi+"×。默认最低 coverage 为 "+cut+"×。"
+}};
+let lang="en";
+try{lang=localStorage.getItem("genome-review-language")==="zh"?"zh":"en";}catch(e){}
+const t=k=>translations[lang][k],tagName=k=>k==="eukaryota"?"euk":k,reasonText=k=>t(k);
+const referenceTip=$("reference"),coverageHeading=$("coverageHeading");
+function showReference(){
+ referenceTip.hidden=false;const a=coverageHeading.getBoundingClientRect(),b=referenceTip.getBoundingClientRect();
+ referenceTip.style.left=Math.max(12,Math.min(innerWidth-b.width-12,a.left))+"px";
+ referenceTip.style.top=Math.max(12,Math.min(innerHeight-b.height-12,a.bottom+6))+"px";
+}
+function hideReference(){referenceTip.hidden=true;}
+coverageHeading.addEventListener("mouseenter",showReference);
+coverageHeading.addEventListener("mouseleave",()=>{if(document.activeElement!==coverageHeading)hideReference();});
+coverageHeading.addEventListener("focus",showReference);
+coverageHeading.addEventListener("blur",hideReference);
+coverageHeading.addEventListener("keydown",e=>{if(e.key==="Escape")hideReference();});
+window.addEventListener("scroll",hideReference,true);
+window.addEventListener("resize",hideReference);
+const thresholdColor=getComputedStyle(document.documentElement).getPropertyValue("--threshold-color").trim();
+let distributionMode="euk-other";
+const labelColor=i=>["#1d1d1f","#709487","#d2d2d7","#77777e","#a3a3a8","#b9b9bd"][i%6];
+const labelFill=i=>["#b6b6bb","#c6d8cf","#e7e7ea","#c9c9ce","#d9d9dd","#e1e1e4"][i%6];
+$("distributionMode").addEventListener("change",()=>{distributionMode=$("distributionMode").value;drag=null;$("tooltip").hidden=true;draw();});
+const availableLabels=[...new Set(["eukaryota","other","NA",...PROJECT.samples.flatMap(m=>Object.keys(m.groups))])];
+const normalizeLabels=v=>v==="all"?[...availableLabels]:typeof v==="string"?[v]:Array.isArray(v)?[...v]:null;
+const validLabels=v=>Array.isArray(v)&&v.length>0&&new Set(v).size===v.length&&v.every(k=>availableLabels.includes(k));
+let pointLayers=null,refreshFrame=0;
+let ordered=null,originalSummary=null;let rows=[],settings=new Map(),sample="",ref=null,result=null,geometry=null,hoverPoints=[],drag=null,loadTag=null,saveTimer=null,loaded=false,statusKey="";
+const storageKey="genome-review-v2:"+PROJECT.dataset_id;
+const metadata=new Map(PROJECT.samples.map(m=>[m.sample_id,m]));
+const state=()=>settings.get(sample),error=m=>{$("message").textContent=m||"";},setStatus=k=>{statusKey=k;$("saveStatus").textContent=t(k);};
+const valid=s=>s.retain_sample===false||(Number.isSafeInteger(s.length)&&s.length>=0&&Number.isSafeInteger(s.coverage)&&s.coverage>=0&&(s.maxCoverage===null||(Number.isSafeInteger(s.maxCoverage)&&s.maxCoverage>=s.coverage))&&validLabels(s.labels));
+const exampleNote=m=>PROJECT.browser_demo&&m?.example?m.example[lang]:"";
+for(const m of PROJECT.samples)settings.set(m.sample_id,{retain_sample:true,maxCoverage:null,length:500,coverage:m.reference.min_coverage===null?null:Math.round(m.reference.min_coverage),labels:[...availableLabels],mode:"default",reviewed:false,reviewed_at:null,note:exampleNote(m),expected_kept_contigs:null,expected_kept_bp:null});
+function documentData(){return{schema_version:7,dataset_id:PROJECT.dataset_id,exported_at:new Date().toISOString(),samples:PROJECT.samples.map(m=>{const s=settings.get(m.sample_id);return{sample_id:m.sample_id,fingerprint:m.fingerprint,eac_path:m.eac_path,eac_sha256:m.eac_sha256,retain_sample:s.retain_sample,min_length_bp:s.length,min_coverage:s.coverage,max_coverage:s.maxCoverage,labels:[...s.labels],mode:s.mode,reviewed:s.reviewed,reviewed_at:s.reviewed_at,note:s.note,expected_kept_contigs:s.expected_kept_contigs,expected_kept_bp:s.expected_kept_bp};})};}
+let serverReady=!PROJECT.review_server,serverRevision="",remoteConflict=false;
+let remoteSaveChain=Promise.resolve();
+function saveLocal(){
+ clearTimeout(saveTimer);
+ if(!serverReady)return Promise.resolve();
+ const document=documentData();
+ try{localStorage.setItem(storageKey,JSON.stringify(document));setStatus("autoSaved");}catch(e){setStatus("saveBackup");}
+ if(!PROJECT.review_server)return Promise.resolve();
+ remoteSaveChain=remoteSaveChain.catch(()=>{}).then(async()=>{
+  if(remoteConflict)throw new Error(t("saveConflict"));
+  const response=await fetch("/api/decisions",{method:"POST",headers:{"Content-Type":"application/json","X-EAC-Token":PROJECT.review_server.token},body:JSON.stringify({revision:serverRevision,decisions:document})});
+  const saved=await response.json();
+  if(response.status===409)remoteConflict=true;
+  if(!response.ok)throw new Error(saved.error||t("saveFailed"));
+  serverRevision=saved.revision;setStatus("serverSaved");
+  $("saveStatus").title=saved.path;
+ });
+ remoteSaveChain.catch(e=>{setStatus("saveBackup");error(t("saveFailed")+e.message);});
+ return remoteSaveChain;
+}
+async function initializeProgress(){
+ try{
+  let saved;
+  if(PROJECT.review_server){
+   const response=await fetch("/api/decisions",{headers:{"X-EAC-Token":PROJECT.review_server.token},cache:"no-store"});
+   if(!response.ok)throw new Error(t("saveFailed"));
+   const data=await response.json();serverRevision=data.revision;saved=data.decisions;
+   $("saveStatus").title=data.path;
+  }else{
+   const raw=localStorage.getItem(storageKey);saved=raw?JSON.parse(raw):null;
+  }
+  if(saved){restoreDocument(saved);setStatus("restored");}
+  serverReady=true;
+ }catch(e){error(t("autoRestoreFailed")+e.message+t("restoreHelp"));if(PROJECT.review_server)throw e;}
+}
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveLocal,200);}
+function restoreDocument(d){
+ if(![2,3,4,5,6,7].includes(d.schema_version)||(d.schema_version===7&&d.dataset_id!==PROJECT.dataset_id)||!Array.isArray(d.samples)||d.samples.length!==PROJECT.samples.length)throw new Error(t("wrongDocument"));
+ const next=new Map();
+ for(const entry of d.samples){
+  const m=metadata.get(entry.sample_id);
+  if(!m||next.has(entry.sample_id)||entry.fingerprint!==m.fingerprint)throw new Error(t("wrongSample")+entry.sample_id);
+  if(d.schema_version===7&&(entry.eac_path!==m.eac_path||entry.eac_sha256!==m.eac_sha256))throw new Error(t("wrongSample")+entry.sample_id);
+  const labels=normalizeLabels(entry.labels);
+  const s={retain_sample:d.schema_version>=5?entry.retain_sample:true,length:entry.min_length_bp,coverage:entry.min_coverage,maxCoverage:d.schema_version>=6?entry.max_coverage:null,labels,mode:entry.mode==="default"?"default":"manual",reviewed:entry.reviewed,reviewed_at:entry.reviewed_at,note:entry.note??"",expected_kept_contigs:entry.expected_kept_contigs,expected_kept_bp:entry.expected_kept_bp};
+  if(s.maxCoverage!==null&&(!Number.isSafeInteger(s.maxCoverage)||s.maxCoverage<0))throw new Error(t("wrongThresholds")+entry.sample_id);
+  if(typeof s.retain_sample!=="boolean"||typeof s.reviewed!=="boolean"||typeof s.note!=="string"||!Array.isArray(labels)||new Set(labels).size!==labels.length||!labels.every(k=>availableLabels.includes(k)))throw new Error(t("wrongFields")+entry.sample_id);
+  if(s.length!==null&&(!Number.isSafeInteger(s.length)||s.length<0)||s.coverage!==null&&(!Number.isFinite(s.coverage)||s.coverage<0))throw new Error(t("wrongThresholds")+entry.sample_id);
+  if(s.coverage!==null&&!Number.isInteger(s.coverage)){
+   s.coverage=Math.round(s.coverage);s.reviewed=false;s.reviewed_at=null;s.expected_kept_contigs=null;s.expected_kept_bp=null;
+  }
+  if(s.reviewed&&(!valid(s)||(s.retain_sample===false&&(s.expected_kept_contigs!==0||s.expected_kept_bp!==0))||!Number.isSafeInteger(s.expected_kept_contigs)||s.expected_kept_contigs<0||!Number.isSafeInteger(s.expected_kept_bp)||s.expected_kept_bp<0))throw new Error(t("wrongReviewed")+entry.sample_id);
+  next.set(entry.sample_id,s);
+ }
+ settings=next;
+}
+function listSamples(){
+ const previousScroll=$("sampleList").scrollTop;
+ const query=$("search").value.trim().toLowerCase(),pending=$("onlyPending").getAttribute("aria-pressed")==="true";
+ $("progress").textContent=[...settings.values()].filter(s=>s.reviewed).length+" / "+PROJECT.samples.length+" "+t("reviewed").toLowerCase();
+ $("sampleList").replaceChildren();
+ for(const m of PROJECT.samples){
+  const s=settings.get(m.sample_id);if(!m.sample_id.toLowerCase().includes(query)||(pending&&s.reviewed))continue;
+  const b=document.createElement("button");b.type="button";b.title=m.sample_id;b.className="sample-item";b.setAttribute("aria-current",String(m.sample_id===sample));
+  const name=document.createElement("span"),status=document.createElement("span");name.textContent=m.sample_id;status.className="sample-status";status.dataset.reviewed=String(s.reviewed);status.setAttribute("aria-hidden","true");b.title=m.sample_id+"; "+t(s.reviewed?"reviewed":"unreviewed");b.setAttribute("aria-label",b.title);
+  b.append(name,status);b.addEventListener("click",()=>selectSample(m.sample_id));$("sampleList").append(b);
+ }
+ if(!$("sampleList").children.length){const p=document.createElement("p");p.className="small muted";p.textContent=t("noMatches");$("sampleList").append(p);}
+ $("sampleList").scrollTop=previousScroll;
+}
+function invalidate(){const s=state(),wasReviewed=s.reviewed;s.reviewed=false;s.reviewed_at=null;s.expected_kept_contigs=null;s.expected_kept_bp=null;if(wasReviewed)listSamples();scheduleSave();}
+let bulkBusy=false,bulkPending=null;
+function selectSample(name){
+ if(bulkBusy)return;
+ sample=name;loaded=false;pointLayers=null;rows=[];result=null;hoverPoints=[];drag=null;geometry=null;
+ $("tooltip").hidden=true;$("sampleContent").hidden=true;$("loading").hidden=false;$("loading").textContent=t("loading");$("confirm").disabled=true;$("retainSample").disabled=true;$("markAll").disabled=true;
+ $("chartTitle").textContent=name;$("currentStatus").textContent="";$("previous").disabled=PROJECT.samples[0].sample_id===name;error();listSamples();
+ if(loadTag)loadTag.remove();
+ const meta=metadata.get(name),tag=document.createElement("script");tag.src=meta.data_file;
+ tag.onerror=()=>{if(sample===name){$("loading").textContent=t("loadFailed");error(t("loadHelp"));}};
+ loadTag=tag;document.body.append(tag);
+}
+window.receiveGenomeSample=payload=>{
+ if(bulkPending&&payload.sample_id===bulkPending.sample_id){bulkPending.resolve(payload);return;}
+ if(payload.sample_id!==sample)return;
+ const meta=metadata.get(sample);
+ try{const decoded=decodePayload(meta,payload);rows=decoded.rows;ref=decoded.reference;}catch(e){error(e.message);return;}
+ loaded=true;
+ ordered={coverage:rows.map((_,i)=>i).sort((a,b)=>rows[a].coverage-rows[b].coverage),length:rows.map((_,i)=>i).sort((a,b)=>rows[a].length-rows[b].length)};
+ originalSummary={coverage:summarize("coverage",null),length:summarize("length",null)};
+ $("loading").hidden=true;$("sampleContent").hidden=false;
+ const s=state();$("length").value=s.length===null?"":s.length;$("coverage").value=s.coverage===null?"":s.coverage;$("maxCoverage").value=maxCoverageValue(s);$("note").value=s.note;$("note").placeholder=exampleNote(metadata.get(sample))||t("notePlaceholder");
+ refresh();if(loadTag){loadTag.remove();loadTag=null;}
+};
+function summarize(field,selection,removed=false){
+ const n=selection?(removed?rows.length-selection.kept:selection.kept):rows.length;if(!n)return null;
+ let count=0,min=null,max=null,left=null,right=null;const lo=Math.floor((n-1)/2),hi=Math.floor(n/2);
+ for(const i of ordered[field]){if(selection&&selection.annotated[i].keep===removed)continue;const v=rows[i][field];if(count===0)min=v;max=v;if(count===lo)left=v;if(count===hi)right=v;count++;}
+ return {n,median:left/2+right/2,min,max};
+}
+function renderSummary(id,data){
+ $(id).textContent=data?format(data.median)+"; "+format(data.min)+"–"+format(data.max):"—";
+}
+function renderGroup(name,totalCount,totalBp,keptCount,keptBp,isTotal){
+ const row=document.createElement("tr");row.className=isTotal?"group-total":"ecm-group";
+ const label=document.createElement("th");label.scope="row";label.textContent=name;row.append(label);
+ for(const [count,bp,original] of [[totalCount,totalBp,true],[keptCount,keptBp,false],[result?totalCount-keptCount:null,result?totalBp-keptBp:null,false]]){
+  const cell=document.createElement("td");
+  for(const [value,total,length] of [[count,totalCount,false],[bp,totalBp,true]]){
+   if(length)cell.append(document.createTextNode("; "));
+   const line=document.createElement("span");line.className="group-value"+(length?" group-length":"");
+   line.append(document.createTextNode(value===null?"—":length?mb(value)+" Mb":format(value)));
+   if(length&&value!==null)line.title=format(value)+" bp";
+   if(!original&&value!==null){const percent=document.createElement("small");percent.textContent="("+pct(value,total)+")";line.append(percent);}
+   cell.append(line);
+  }
+  row.append(cell);
+ }
+ $("groupSummary").append(row);
+}
+function maxCoverageValue(s){return s.maxCoverage===null?Math.ceil(originalSummary.coverage.max):s.maxCoverage;}
+function renderLabels(){
+ const s=state(),ready=Number.isFinite(s.length)&&Number.isFinite(s.coverage),eligible=new Map(availableLabels.map(k=>[k,0]));
+ if(ready)for(const r of rows)if(r.length>=s.length&&r.coverage>=s.coverage&&(s.maxCoverage===null||r.coverage<=s.maxCoverage))eligible.set(r.label,(eligible.get(r.label)||0)+1);
+ $("labels").replaceChildren();
+ for(const k of availableLabels){
+  const empty=ready&&eligible.get(k)===0,b=document.createElement("button");b.type="button";b.textContent=tagName(k);
+  b.disabled=empty;b.setAttribute("aria-pressed",String(s.labels.includes(k)&&!empty));
+  if(empty){b.title=t("noEligible");b.setAttribute("aria-describedby","labelHint");}
+  b.addEventListener("click",()=>{s.labels=s.labels.includes(k)?s.labels.filter(x=>x!==k):availableLabels.filter(x=>s.labels.includes(x)||x===k);s.mode="manual";invalidate();refresh();});
+  $("labels").append(b);
+ }
+}
+function scheduleRefresh(){
+ if(!refreshFrame)refreshFrame=requestAnimationFrame(()=>refresh());
+}
+function refresh(){
+ cancelAnimationFrame(refreshFrame);
+ refreshFrame=0;
+ if(!loaded)return;
+ const s=state(),ok=valid(s);result=ok?C.evaluate(rows,s):null;
+ if(s.reviewed&&result&&(result.kept!==s.expected_kept_contigs||result.keptBp!==s.expected_kept_bp)){invalidate();error(t("restoredMismatch"));}
+ $("markAll").disabled=bulkBusy;$("retainSample").disabled=false;$("retainSample").checked=s.retain_sample;
+ $("confirm").disabled=!ok;$("confirm").textContent=t(!s.retain_sample?"confirmExcluded":result?.kept===0?"confirmEmpty":"confirm");
+ $("currentStatus").textContent=t(s.reviewed?"reviewed":"unreviewed")+"; "+(PROJECT.samples.findIndex(m=>m.sample_id===sample)+1)+" / "+PROJECT.samples.length;
+ $("mode").textContent=!s.retain_sample?t("sampleExcluded"):ok?t(s.mode==="default"?"defaultMode":"manualMode"):t("invalid");
+ $("reference").textContent=ref.n?translations[lang].reference(format(ref.n),compact(ref.median),compact(ref.min),compact(ref.max),compact(ref.cutoff)):t("noReference");
+ renderLabels();
+ $("groupSummary").replaceChildren();
+ const meta=metadata.get(sample);
+ renderGroup(t("allSequences"),rows.length,meta.bp,result?result.kept:null,result?result.keptBp:null,true);
+ for(const k of availableLabels){
+  const o=meta.groups[k]||{contigs:0,bp:0},g=result?.groups[k]||{kept:0,keptBp:0};
+  renderGroup(t("labelled")+tagName(k),o.contigs,o.bp,result?g.kept:null,result?g.keptBp:null,false);
+ }
+ for(const field of ["coverage","length"]){const suffix=field==="coverage"?"Coverage":"Length";renderSummary("original"+suffix,originalSummary[field]);renderSummary("retained"+suffix,result?summarize(field,result):null);renderSummary("removed"+suffix,result?summarize(field,result,true):null);}
+
+ draw();
+}
+function translate(){
+ if(PROJECT.browser_demo)for(const m of PROJECT.samples){const s=settings.get(m.sample_id);if(m.example&&Object.values(m.example).includes(s.note))s.note=exampleNote(m);}
+ if(sample){$("note").value=state().note;$("note").placeholder=exampleNote(metadata.get(sample))||t("notePlaceholder");}
+ document.documentElement.lang=lang==="en"?"en":"zh-CN";document.title=t("title");$("langEn").setAttribute("aria-pressed",String(lang==="en"));$("langZh").setAttribute("aria-pressed",String(lang==="zh"));
+ for(const el of document.querySelectorAll("[data-i18n]"))el.textContent=t(el.dataset.i18n);
+ $("search").placeholder=t("search");$("note").placeholder=exampleNote(metadata.get(sample))||t("notePlaceholder");$("lengthRange").setAttribute("aria-label",t("adjustLength"));$("coverageRange").setAttribute("aria-label",t("adjustCoverage"));$("maxCoverageRange").setAttribute("aria-label",t("adjustMaxCoverage"));$("canvas").setAttribute("aria-label",t("plotAlt"));$("sampleList").setAttribute("aria-label",t("samples"));
+ $("projectTitle").textContent=PROJECT.project_name+"; "+PROJECT.samples.length+" "+t("samples");
+ $("legend").replaceChildren();for(const k of availableLabels){const el=document.createElement("span");el.textContent=tagName(k);const dot=document.createElement("span");dot.className="legend-dot";dot.style.background=labelColor(availableLabels.indexOf(k));dot.setAttribute("aria-hidden","true");el.prepend(dot);$("legend").append(el);}const threshold=document.createElement("span");threshold.className="threshold";threshold.textContent=t("threshold");const swatch=document.createElementNS("http://www.w3.org/2000/svg","svg"),line=document.createElementNS("http://www.w3.org/2000/svg","line");swatch.setAttribute("class","threshold-line");swatch.setAttribute("viewBox","0 0 20 10");swatch.setAttribute("aria-hidden","true");for(const [key,value] of Object.entries({x1:0,y1:5,x2:20,y2:5}))line.setAttribute(key,value);swatch.append(line);threshold.prepend(swatch);const faded=document.createElement("span");faded.textContent=t("faded");$("legend").append(threshold,faded);
+ $("splitter").setAttribute("aria-label",t("resizeSidebar"));document.querySelector(".language-toggle").setAttribute("aria-label",t("language"));
+ $("previous").title=t("previousShortcut");$("confirm").title=t("confirmShortcut");
+ $("previous").setAttribute("aria-keyshortcuts","ArrowLeft");$("confirm").setAttribute("aria-keyshortcuts","ArrowRight");
+ if(statusKey)setStatus(statusKey);$("loading").textContent=t("loading");$("tooltip").hidden=true;listSamples();refresh();
+}
+for(const [id,value] of [["langEn","en"],["langZh","zh"]])$(id).addEventListener("click",()=>{lang=value;try{localStorage.setItem("genome-review-language",lang);}catch(e){}translate();});
+for(const id of ["length","coverage","maxCoverage"])$(id).addEventListener("input",()=>{if(!loaded)return;const raw=$(id).value;state()[id]=raw===""?null:Math.round(Number(raw));if(raw!=="")$(id).value=state()[id];state().mode="manual";invalidate();refresh();});
+$("maxCoverage").addEventListener("change",()=>{if(state().maxCoverage===null)$("maxCoverage").value=maxCoverageValue(state());});
+$("retainSample").addEventListener("change",()=>{if(!loaded)return;state().retain_sample=$("retainSample").checked;invalidate();refresh();});
+$("note").addEventListener("input",()=>{state().note=$("note").value;scheduleSave();});
+$("reset").addEventListener("click",()=>{Object.assign(state(),{length:500,coverage:ref.cutoff,maxCoverage:null,labels:[...availableLabels],mode:"default"});invalidate();$("length").value=500;$("coverage").value=ref.cutoff===null?"":ref.cutoff;$("maxCoverage").value=maxCoverageValue(state());refresh();});
+$("search").addEventListener("input",listSamples);$("onlyPending").addEventListener("click",()=>{$("onlyPending").setAttribute("aria-pressed",String($("onlyPending").getAttribute("aria-pressed")!=="true"));listSamples();});
+$("previous").addEventListener("click",()=>{const i=PROJECT.samples.findIndex(m=>m.sample_id===sample);if(i>0)selectSample(PROJECT.samples[i-1].sample_id);});
+$("confirm").addEventListener("click",()=>{
+ if(refreshFrame)refresh();
+ if(!loaded||!result||!valid(state()))return;
+ markReviewed(state(),result);saveLocal();
+ const current=PROJECT.samples.findIndex(m=>m.sample_id===sample),next=PROJECT.samples[current+1];
+ if(next)selectSample(next.sample_id);else{listSamples();refresh();setStatus([...settings.values()].every(s=>s.reviewed)?"allDone":"lastSample");}
+});
+document.addEventListener("keydown",e=>{
+ if(!["ArrowLeft","ArrowRight"].includes(e.key)||e.repeat||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||bulkBusy||!loaded)return;
+ if(e.target instanceof Element&&e.target.closest("input,textarea,select,[contenteditable],[role=separator]"))return;
+ const button=$(e.key==="ArrowLeft"?"previous":"confirm");
+ if(!button.disabled){e.preventDefault();button.click();}
+});
+function readReviewPayload(meta){
+ const tag=document.createElement("script");
+ return new Promise((resolve,reject)=>{
+  bulkPending={sample_id:meta.sample_id,resolve};
+  tag.src=meta.data_file;
+  tag.onerror=()=>reject(new Error(t("loadFailed")+": "+meta.sample_id));
+  tag.onload=()=>reject(new Error(t("wrongData")+" "+meta.sample_id));
+  document.body.append(tag);
+ }).finally(()=>{tag.remove();bulkPending=null;});
+}
+function decodePayload(meta,payload){
+ if(payload.sample_id!==meta.sample_id||payload.fingerprint!==meta.fingerprint)throw new Error(t("wrongData"));
+ const rows=payload.rows.map(r=>({id:r[0],length:r[1],coverage:r[2],label:r[3]})),reference=C.reference(rows);
+ if(rows.length!==meta.contigs||rows.reduce((n,r)=>n+r.length,0)!==meta.bp||reference.n!==meta.reference.n||reference.median!==meta.reference.cov_10kb)throw new Error(t("wrongStats"));
+ return {rows,reference};
+}
+function markReviewed(s,evaluated){
+ Object.assign(s,{reviewed:true,reviewed_at:new Date().toISOString(),expected_kept_contigs:evaluated.kept,expected_kept_bp:evaluated.keptBp});
+}
+$("markAll").addEventListener("click",async()=>{
+ if(bulkBusy||!loaded)return;
+ bulkBusy=true;error();$("markAll").disabled=true;
+ const locked=[document.querySelector("header"),document.querySelector("main"),$("sampleList"),$("search"),$("onlyPending"),$("splitter")];
+ for(const el of locked)el.inert=true;
+ let count=0,failed=null;
+ try{
+  const pending=PROJECT.samples.filter(m=>!settings.get(m.sample_id).reviewed&&valid(settings.get(m.sample_id)));
+  for(const [i,m] of pending.entries()){
+   $("markAll").textContent=t("markingAll")+" "+(i+1)+" / "+pending.length;
+   const data=decodePayload(m,await readReviewPayload(m));
+   markReviewed(settings.get(m.sample_id),C.evaluate(data.rows,settings.get(m.sample_id)));count++;
+   if(count%20===0)saveLocal();
+  }
+ }catch(e){failed=e.message;}
+ finally{
+  bulkBusy=false;for(const el of locked)el.inert=false;
+  $("markAll").disabled=false;$("markAll").textContent=t("markAll");
+  saveLocal();listSamples();refresh();
+  const skipped=[...settings.values()].filter(s=>!s.reviewed).length;
+  statusKey="";$("saveStatus").textContent=translations[lang].batchDone(count,skipped);
+  if(failed)error(failed);
+ }
+});
+$("save").addEventListener("click",async()=>{
+ try{
+  await saveLocal();
+  if(PROJECT.review_server){statusKey="";$("saveStatus").textContent=t("savedTo")+PROJECT.review_server.path;return;}
+  const url=URL.createObjectURL(new Blob([JSON.stringify(documentData(),null,2)+"\n"],{type:"application/json"}));
+  const link=document.createElement("a");link.href=url;link.download="decisions.json";
+  document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(e){error(t("saveFailed")+e.message);}
+});
+$("restore").addEventListener("click",()=>{$("restoreFile").value="";$("restoreFile").click();});
+$("restoreFile").addEventListener("change",async()=>{const f=$("restoreFile").files[0];if(!f)return;try{restoreDocument(JSON.parse(await f.text()));saveLocal();selectSample(sample);}catch(e){error(e.message);}});
+window.addEventListener("pagehide",saveLocal);
+const shell=document.querySelector(".shell"),splitter=$("splitter");
+function resizeSidebar(value){
+ const max=Math.min(520,Math.max(150,shell.clientWidth-360)),width=Math.max(150,Math.min(max,Math.round(value)));
+ shell.style.setProperty("--sidebar",width+"px");splitter.setAttribute("aria-valuenow",String(width));splitter.setAttribute("aria-valuemax",String(max));return width;
+}
+let desiredSidebar=window.matchMedia("(max-width:720px)").matches?165:230;try{const saved=Number(localStorage.getItem("genome-review-sidebar"));if(saved>0)desiredSidebar=saved;}catch(e){}
+resizeSidebar(desiredSidebar);
+let resizing=false;
+splitter.addEventListener("pointerdown",e=>{resizing=true;splitter.setPointerCapture(e.pointerId);e.preventDefault();});
+splitter.addEventListener("pointermove",e=>{if(resizing)desiredSidebar=resizeSidebar(e.clientX-shell.getBoundingClientRect().left);});
+function finishResize(){if(!resizing)return;resizing=false;try{localStorage.setItem("genome-review-sidebar",splitter.getAttribute("aria-valuenow"));}catch(e){}}
+splitter.addEventListener("pointerup",finishResize);splitter.addEventListener("pointercancel",finishResize);splitter.addEventListener("lostpointercapture",finishResize);
+splitter.addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight"].includes(e.key)){e.preventDefault();desiredSidebar=resizeSidebar(Number(splitter.getAttribute("aria-valuenow"))+(e.key==="ArrowLeft"?-20:20));try{localStorage.setItem("genome-review-sidebar",splitter.getAttribute("aria-valuenow"));}catch(e){}}});
+window.addEventListener("resize",()=>resizeSidebar(desiredSidebar));
+$("filteringModule").addEventListener("toggle",()=>{drag=null;$("tooltip").hidden=true;if($("filteringModule").open)draw();});
+const plotPercentKey="genome-review-plot-percent-scale90";
+const plotBaseScale=0.9;
+let plotPercent=100,plotMinPercent=50;
+try{
+ const saved=Number(localStorage.getItem(plotPercentKey));
+ if(Number.isFinite(saved)&&saved>=50&&saved<=100)plotPercent=Math.round(saved);
+ else{
+  const previous=Number(localStorage.getItem("genome-review-plot-percent"));
+  if(Number.isFinite(previous)&&previous>=50&&previous<=125)plotPercent=Math.min(100,Math.round(previous/plotBaseScale));
+  localStorage.setItem(plotPercentKey,String(plotPercent));
+ }
+}catch(e){}
+function setPlotPercent(value){
+ plotPercent=Math.max(plotMinPercent,Math.min(100,Math.round(Number.isFinite(value)?value:plotPercent)));
+ $("plotPercent").value=plotPercent;
+ try{localStorage.setItem(plotPercentKey,String(plotPercent));}catch(e){}
+ drag=null;$("tooltip").hidden=true;draw();
+}
+$("plotPercent").addEventListener("input",e=>{const value=e.target.valueAsNumber;if(Number.isFinite(value)&&value>=plotMinPercent&&value<=100)setPlotPercent(value);});
+$("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNumber));
+  const yT=v=>Math.asinh(v),yI=v=>Math.sinh(v);
+  function scale(a,b,c,d,transform,inverse){return {f:v=>c+(transform(v)-a)/(b-a)*(d-c),i:v=>inverse(a+(v-c)/(d-c)*(b-a)),a,b};}
+  function draw(){
+    if(!rows.length||!$("filteringModule").open)return;
+    const holder=$("plot"),canvas=$("canvas"),baseWidth=document.querySelector(".filtering-plot").clientWidth,marginal=true;
+    const baseHeight=Math.ceil(Math.max(220,(baseWidth-132)/2)+108);
+    plotMinPercent=Math.min(100,Math.ceil(Math.max(50,240/(baseHeight*plotBaseScale)*100,320/(baseWidth*plotBaseScale)*100)));
+    const effectivePercent=Math.max(plotMinPercent,plotPercent),plotFactor=plotBaseScale*effectivePercent/100;
+    const w=Math.round(baseWidth*plotFactor),targetHeight=Math.round(baseHeight*plotFactor);
+    $("plotPercent").min=plotMinPercent;
+    if(document.activeElement!==$("plotPercent"))$("plotPercent").value=effectivePercent;
+
+    holder.style.width=w+"px";document.querySelector(".plotbar").style.width=w+"px";
+    if(holder.style.height!==targetHeight+"px")holder.style.height=targetHeight+"px";
+    const h=holder.clientHeight,dpr=window.devicePixelRatio||1;
+    if(canvas.width!==Math.round(w*dpr))canvas.width=Math.round(w*dpr);
+    if(canvas.height!==Math.round(h*dpr))canvas.height=Math.round(h*dpr);
+    const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+    const box={left:66,right:w-(marginal?66:18),top:marginal?64:26,bottom:h-44};
+    const s=state();
+    if(!drag){
+      let minL=originalSummary.length.min,maxL=originalSummary.length.max,maxC=originalSummary.coverage.max;
+      if(Number.isFinite(s.length)&&s.length>0){minL=Math.min(minL,s.length);maxL=Math.max(maxL,s.length);}
+      if(Number.isFinite(s.coverage))maxC=Math.max(maxC,s.coverage);maxC=Math.max(maxC,maxCoverageValue(s));
+      const lo=Math.max(0,Math.log10(minL)-.12),hi=Math.max(lo+.5,Math.log10(maxL)+.12),yc=yT(Math.max(1,maxC))*1.07;
+      geometry={...box,w,h,x:scale(lo,hi,box.left,box.right,Math.log10,v=>10**v),y:scale(0,yc,box.bottom,box.top,yT,yI)};
+    }
+    const g=geometry;preparePointLayers(g,dpr);if(marginal)drawDistributions(ctx,g);ctx.font='12px -apple-system, sans-serif';ctx.strokeStyle="#ededee";ctx.lineWidth=1;ctx.fillStyle="#6e6e73";
+    const xTicks=[];
+    for(let power=Math.floor(g.x.a);power<=Math.ceil(g.x.b);power++)for(const factor of [1,5]){const v=factor*10**power;if(Math.log10(v)>=g.x.a&&Math.log10(v)<=g.x.b)xTicks.push(v);}
+    let last=-Infinity;const gap=w<480?68:54;
+    for(const v of xTicks){const x=g.x.f(v);if(x-last<gap||g.right-x<18)continue;last=x;
+      ctx.beginPath();ctx.moveTo(x,g.top);ctx.lineTo(x,g.bottom);ctx.stroke();ctx.textAlign="center";ctx.fillText(v>=1e6?compact(v/1e6)+"M":v>=1e3?compact(v/1e3)+"k":compact(v),x,g.bottom+21);
+    }
+    const yTicks=[0,1,10,100,1000,10000,100000,1000000,10000000,100000000];
+    let lastY=Infinity;
+    for(const v of yTicks){const y=g.y.f(v);if(y<g.top+5||lastY-y<25)continue;lastY=y;ctx.beginPath();ctx.moveTo(g.left,y);ctx.lineTo(g.right,y);ctx.stroke();ctx.textAlign="right";ctx.fillText(v>=1e6?compact(v/1e6)+"M":format(v),g.left-9,y+4);}
+    ctx.strokeStyle="#d2d2d7";ctx.strokeRect(g.left,g.top,g.right-g.left,g.bottom-g.top);
+    const lx=Number.isFinite(s.length)&&s.length>0?g.x.f(s.length):g.left;
+    const cy=Number.isFinite(s.coverage)?g.y.f(s.coverage):null,upper=maxCoverageValue(s),uy=g.y.f(upper);
+    ctx.fillStyle="#f3f3f3";ctx.globalAlpha=.65;
+    if(lx>g.left)ctx.fillRect(g.left,g.top,Math.min(lx,g.right)-g.left,g.bottom-g.top);
+    if(cy!==null)ctx.fillRect(Math.max(g.left,lx),Math.max(g.top,cy),Math.max(0,g.right-Math.max(g.left,lx)),Math.max(0,g.bottom-Math.max(g.top,cy)));
+    if(s.maxCoverage!==null)ctx.fillRect(Math.max(g.left,lx),g.top,Math.max(0,g.right-Math.max(g.left,lx)),Math.max(0,Math.min(g.bottom,uy)-g.top));
+    ctx.globalAlpha=1;
+    drawPoints(ctx,g,s,lx,cy,uy);
+    ctx.globalAlpha=1;ctx.lineWidth=1.5;ctx.strokeStyle=thresholdColor;ctx.setLineDash([6,4]);
+    if(lx>=g.left&&lx<=g.right){ctx.beginPath();ctx.moveTo(lx,marginal?8:g.top);ctx.lineTo(lx,g.bottom);ctx.stroke();}
+    for(const y of [cy,uy])if(y!==null){ctx.beginPath();ctx.moveTo(g.left,y);ctx.lineTo(marginal?g.right+54:g.right,y);ctx.stroke();}
+    ctx.setLineDash([]);ctx.fillStyle=thresholdColor;ctx.font='12px -apple-system, sans-serif';
+    if(s.length!==null){ctx.textAlign="left";const label=compact(s.length)+" bp",tw=ctx.measureText(label).width,xx=Math.max(g.left+4,Math.min(g.right-tw-4,lx+6)),yy=g.top+15;ctx.fillStyle="white";ctx.fillRect(xx-3,yy-12,tw+6,17);ctx.fillStyle=thresholdColor;ctx.fillText(label,xx,yy);}
+    let lowerLabelY=null;
+    for(const [y,value,isLower] of [[cy,s.coverage,true],[uy,upper,false]])if(y!==null){
+      ctx.textAlign="right";const label=compact(value)+" ×";
+      let yy=Math.max(g.top+15,Math.min(g.bottom-5,y-7));
+      if(isLower)lowerLabelY=yy;
+      else if(lowerLabelY!==null&&Math.abs(yy-lowerLabelY)<18)yy=lowerLabelY+18<=g.bottom-5?lowerLabelY+18:lowerLabelY-18;
+      ctx.fillStyle="white";const tw=ctx.measureText(label).width;ctx.fillRect(g.right-tw-10,yy-12,tw+8,17);ctx.fillStyle=thresholdColor;ctx.fillText(label,g.right-4,yy);
+    }
+    ctx.fillStyle="#6e6e73";ctx.textAlign="center";ctx.fillText(t("xAxis"),(g.left+g.right)/2,h-9);
+    ctx.save();ctx.translate(17,(g.top+g.bottom)/2);ctx.rotate(-Math.PI/2);ctx.fillText(t("yAxis"),0,0);ctx.restore();
+    $("lengthRange").value=Number.isFinite(s.length)&&s.length>0?Math.max(0,Math.min(1000,(Math.log10(s.length)-g.x.a)/(g.x.b-g.x.a)*1000)):0;
+    $("coverageRange").value=Number.isFinite(s.coverage)?Math.max(0,Math.min(1000,yT(s.coverage)/g.y.b*1000)):0;
+    $("maxCoverageRange").value=Math.max(0,Math.min(1000,yT(upper)/g.y.b*1000));
+  }
+  // Cache the two point appearances once per sample and axis layout.
+  // Threshold movement then clips these layers instead of redrawing every dot.
+  function preparePointLayers(g,dpr){
+    const key=[g.w,g.h,dpr,g.x.a,g.x.b,g.y.b].join("/");
+    if(pointLayers?.key===key)return;
+    const layers=availableLabels.map((label,index)=>[.22,.55].map(alpha=>{
+      const canvas=document.createElement("canvas");
+      canvas.width=Math.round(g.w*dpr);canvas.height=Math.round(g.h*dpr);
+      const context=canvas.getContext("2d");context.scale(dpr,dpr);
+      context.globalAlpha=alpha;context.fillStyle=labelColor(index);
+      return {canvas,context};
+    }));
+    hoverPoints=rows.map(r=>{
+      const x=g.x.f(r.length),y=g.y.f(r.coverage),label=availableLabels.indexOf(r.label);
+      for(const layer of layers[label]){
+        layer.context.beginPath();layer.context.arc(x,y,2,0,Math.PI*2);layer.context.fill();
+      }
+      return {x,y,r,label,
+        xBin:Math.max(0,Math.min(47,Math.floor((x-g.left)/(g.right-g.left)*48))),
+        yBin:Math.max(0,Math.min(47,Math.floor((g.bottom-y)/(g.bottom-g.top)*48)))};
+    });
+    pointLayers={key,layers};
+  }
+  function drawPoints(ctx,g,s,lx,cy,uy){
+    const left=Math.max(g.left,Math.min(g.right,lx));
+    const top=s.maxCoverage===null?g.top:Math.max(g.top,Math.min(g.bottom,uy));
+    const bottom=cy===null?g.bottom:Math.max(g.top,Math.min(g.bottom,cy));
+    for(let pass=0;pass<2;pass++)for(let label=0;label<availableLabels.length;label++){
+      const included=!result||(s.retain_sample&&s.labels.includes(availableLabels[label]));
+      if(pass===1&&!included)continue;
+      ctx.save();ctx.beginPath();
+      if(pass===0)ctx.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);
+      if(included){
+        if(!result)ctx.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);
+        else ctx.rect(left,top,g.right-left,Math.max(0,bottom-top));
+      }
+      ctx.clip("evenodd");
+      ctx.drawImage(pointLayers.layers[label][pass].canvas,0,0,g.w,g.h);
+      ctx.restore();
+    }
+  }
+  function drawDistributions(ctx,g){
+    const bins=48,smooth=a=>a.map((_,i)=>[1,2,3,2,1].reduce((sum,k,j)=>sum+k*(a[i+j-2]||0),0)/9);
+    for(const axis of ["x","y"]){
+      const byLabel=distributionMode!=="filter",counts=Array.from({length:byLabel?availableLabels.length:2},()=>new Array(bins).fill(0));
+      for(let i=0;i<rows.length;i++){
+        const r=rows[i],point=hoverPoints[i],b=axis==="x"?point.xBin:point.yBin;
+        if(byLabel){if(distributionMode!=="euk-other"||r.label==="eukaryota"||r.label==="other")counts[point.label][b]++;}
+        else{counts[0][b]++;if(result?.annotated[i].keep)counts[1][b]++;}
+      }
+      const curves=counts.map(smooth),peak=Math.max(1,...curves.flat()),base=axis==="x"?g.top-16:g.right+8;
+      const position=(u,v)=>axis==="x"?[g.left+u*(g.right-g.left),base-v/peak*40]:[base+v/peak*46,g.bottom-u*(g.bottom-g.top)];
+      function trace(values,index){
+        const points=[position(0,0),...values.map((v,i)=>position((i+.5)/bins,v)),position(1,0)];
+        ctx.beginPath();ctx.moveTo(...points[0]);
+        for(let i=1;i<points.length-1;i++){const p=points[i],q=points[i+1];ctx.quadraticCurveTo(p[0],p[1],(p[0]+q[0])/2,(p[1]+q[1])/2);}
+        ctx.lineTo(...points[points.length-1]);
+        if(byLabel){ctx.closePath();ctx.fillStyle=labelFill(index);ctx.fill();}
+        else{ctx.closePath();ctx.fillStyle=index===0?"#e7e7ea":"#aaaab0";ctx.fill();}
+      }
+      ctx.save();
+      const order=curves.map((_,i)=>i);
+      if(byLabel)order.sort((a,b)=>Math.max(...curves[b])-Math.max(...curves[a]));
+      for(const i of order)if(byLabel?counts[i].some(Boolean):(i===0||result))trace(curves[i],i);
+      // Draw a separate straight zero-count baseline in either display mode.
+      ctx.beginPath();ctx.moveTo(...position(0,0));ctx.lineTo(...position(1,0));ctx.strokeStyle="#b9b9bd";ctx.lineWidth=1;ctx.stroke();ctx.restore();
+    }
+  }
+  function boundThreshold(id,v){const s=state();return id==="maxCoverage"?Math.max(s.coverage??0,v):id==="coverage"&&s.maxCoverage!==null?Math.min(s.maxCoverage,v):v;}
+  function fromRange(id,v){
+    const g=geometry;
+    return id==="length"?Math.round(10**(g.x.a+v/1000*(g.x.b-g.x.a))):Math.max(0,Math.round(yI(v/1000*g.y.b)));
+  }
+  for(const id of ["length","coverage","maxCoverage"])$(id+"Range").addEventListener("input",e=>{
+    const v=boundThreshold(id,fromRange(id,Number(e.target.value)));state()[id]=v;state().mode="manual";invalidate();$(id).value=v;error();scheduleRefresh();
+  });
+  for(const id of ["length","coverage","maxCoverage"])$(id+"Range").addEventListener("change",refresh);
+  const canvas=$("canvas"),tip=$("tooltip");
+  const point=e=>{const b=canvas.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top};};
+  function nearLine(p){
+    const g=geometry,s=state();if(!g)return null;
+    const marginal=true,limit=eTouch()?20:10;
+    const dx=s.length>0&&p.y>=(marginal?8:g.top-16)&&p.y<=g.bottom+10?Math.abs(p.x-g.x.f(s.length)):Infinity;
+    const dy=Number.isFinite(s.coverage)&&p.x>=g.left-10&&p.x<=(marginal?g.right+54:g.right+10)?Math.abs(p.y-g.y.f(s.coverage)):Infinity;
+    const du=p.x>=g.left-10&&p.x<=(marginal?g.right+54:g.right+10)?Math.abs(p.y-g.y.f(maxCoverageValue(s))):Infinity;
+    const choices=[["length",dx],["coverage",dy],["maxCoverage",du]].sort((a,b)=>a[1]-b[1]);
+    return choices[0][1]<=limit?choices[0][0]:null;
+  }
+  const eTouch=()=>window.matchMedia("(pointer:coarse)").matches;
+  canvas.addEventListener("pointerdown",e=>{const p=point(e),axis=nearLine(p);if(axis){drag=axis;canvas.setPointerCapture(e.pointerId);tip.hidden=true;e.preventDefault();}else showTooltip(p);});
+  canvas.addEventListener("pointermove",e=>{
+    const p=point(e);
+    if(drag){
+      const g=geometry,v=drag==="length"?Math.max(0,Math.round(g.x.i(Math.max(g.left,Math.min(g.right,p.x))))):Math.max(0,Math.round(g.y.i(Math.max(g.top,Math.min(g.bottom,p.y)))));
+      const bounded=boundThreshold(drag,v);if(state()[drag]===bounded)return;state()[drag]=bounded;state().mode="manual";invalidate();$(drag).value=bounded;error();scheduleRefresh();return;
+    }
+    const axis=nearLine(p);canvas.style.cursor=axis==="length"?"ew-resize":axis?"ns-resize":"crosshair";showTooltip(p);
+  });
+  function endDrag(){if(drag){drag=null;refresh();}}
+  canvas.addEventListener("pointerup",endDrag);canvas.addEventListener("pointercancel",endDrag);canvas.addEventListener("lostpointercapture",endDrag);
+  canvas.addEventListener("pointerleave",()=>{if(!drag)tip.hidden=true;});
+  function showTooltip(p){
+    let best=null,distance=(eTouch()?24:10)**2;
+    for(const item of hoverPoints){
+      const dx=item.x-p.x,dy=item.y-p.y,d=dx*dx+dy*dy;
+      if(d<distance){best=item;distance=d;}
+    }
+    if(!best){tip.hidden=true;return;}
+    const r=best.r,why=result?C.reasons(r,state()):null;
+    tip.textContent=r.id+"\nlen: "+format(r.length)+" bp; cov: "+compact(r.coverage)+" ×; tag: "+tagName(r.label)+"\n"+(!why?t("pendingThresholds"):why.length?t("removed")+": "+why.map(reasonText).join("; "):t("retained")+": "+t("passes"));
+    tip.hidden=false;tip.style.left=Math.max(0,Math.min(geometry.w-tip.offsetWidth-4,p.x+12))+"px";tip.style.top=Math.max(0,Math.min(geometry.h-tip.offsetHeight-4,p.y+12))+"px";
+  }
+  new ResizeObserver(()=>{drag=null;draw();}).observe($("filteringModule"));
+
+translate();
+await initializeProgress();
+selectSample(PROJECT.samples.find(m=>!settings.get(m.sample_id).reviewed)?.sample_id||PROJECT.samples[0].sample_id);
+})();
+</script></body></html>

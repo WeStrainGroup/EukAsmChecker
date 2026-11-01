@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.eukasmchecker/
+*.eac.json
+decisions*.json
+*.applying/
+*.zip
+.DS_Store
+conda-dist/

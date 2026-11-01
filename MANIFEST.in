@@ -1,0 +1,8 @@
+include LICENSE README.md README.zh-CN.md
+recursive-include src/eukasmchecker *.html
+recursive-include tests *.py
+recursive-include examples *
+recursive-include web/src *
+include web/build.py
+recursive-include tests *.cjs
+prune conda

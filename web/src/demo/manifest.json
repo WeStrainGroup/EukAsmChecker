@@ -1,0 +1,112 @@
+{
+  "schema_version": 3,
+  "tool_version": "1.0",
+  "browser_local": true,
+  "browser_demo": true,
+  "project_name": "Example",
+  "columns": [
+    "seq_id",
+    "length_bp",
+    "coverage",
+    "ecm_label"
+  ],
+  "dataset_id": "7c883b95e91cf32e3ea862cb78dbb0f3a6b4c82cf58b4e209e58993c00e8ad72",
+  "samples": [
+    {
+      "sample_id": "sample_1",
+      "fingerprint": "1af50311bb7ee9a8a1d19fb4b1e5b0d07b47f9b8c0558b57527cd9c460c9d325",
+      "eac_path": "demo://sample_1",
+      "eac_sha256": "34ffce795c83d3656ace7deee00680187fbb974723f62ffb1c3fbf71aa0e4a3e",
+      "data_file": "demo/sample_1.json",
+      "contigs": 3573,
+      "bp": 28658777,
+      "groups": {
+        "eukaryota": {
+          "contigs": 257,
+          "bp": 27821191
+        },
+        "other": {
+          "contigs": 4,
+          "bp": 2136
+        },
+        "NA": {
+          "contigs": 3312,
+          "bp": 835450
+        }
+      },
+      "reference": {
+        "n": 219,
+        "cov_10kb": 571.251,
+        "min_coverage": 23
+      },
+      "example": {
+        "en": "Typical assembly",
+        "zh": "正常组装示例"
+      }
+    },
+    {
+      "sample_id": "sample_2",
+      "fingerprint": "afab699a1f5d65f7c6315bb18e966608c4553b48c59c4c950850efbcd7636625",
+      "eac_path": "demo://sample_2",
+      "eac_sha256": "a02aef552746edffee290d5996a402288e737422dfd96cc5e822de829b4859cc",
+      "data_file": "demo/sample_2.json",
+      "contigs": 263740,
+      "bp": 182881432,
+      "groups": {
+        "eukaryota": {
+          "contigs": 4275,
+          "bp": 71850588
+        },
+        "other": {
+          "contigs": 29909,
+          "bp": 45208070
+        },
+        "NA": {
+          "contigs": 229556,
+          "bp": 65822774
+        }
+      },
+      "reference": {
+        "n": 1380,
+        "cov_10kb": 38.34525,
+        "min_coverage": 10
+      },
+      "example": {
+        "en": "Severe prokaryotic contamination with overlapping clusters",
+        "zh": "严重原核污染，覆盖度分布难以区分"
+      }
+    },
+    {
+      "sample_id": "sample_3",
+      "fingerprint": "79c56e7d106864e28c2c1dfe1e1514334076bc3c80443927184208dafffbe213",
+      "eac_path": "demo://sample_3",
+      "eac_sha256": "d6fcde0b312d7bc7dffb4ed291763c6979351d8418e9137e2b0325b304ff66a9",
+      "data_file": "demo/sample_3.json",
+      "contigs": 11993,
+      "bp": 16365329,
+      "groups": {
+        "eukaryota": {
+          "contigs": 363,
+          "bp": 12916576
+        },
+        "other": {
+          "contigs": 845,
+          "bp": 565266
+        },
+        "NA": {
+          "contigs": 10785,
+          "bp": 2883487
+        }
+      },
+      "reference": {
+        "n": 181,
+        "cov_10kb": 1079.74,
+        "min_coverage": 43
+      },
+      "example": {
+        "en": "Prokaryotic contamination with separable clusters",
+        "zh": "可通过分布区分的原核污染"
+      }
+    }
+  ]
+}

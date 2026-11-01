@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EukAsmChecker — Assembly review</title>
+<meta name="description" content="Review and filter genome assemblies by sequence length, reads coverage and EukContigMiner (ECM) labels. Files are processed in your browser.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+<a class="brand" href="./"><span>EukAsmChecker</span></a>
+<nav><button id="demo" class="quiet" data-text="demo">Example</button><a href="https://github.com/WeStrainGroup/EukAsmChecker" target="_blank" rel="noopener">GitHub ↗</a><button id="language" class="quiet">中文</button></nav>
+</header>
+<main id="setup">
+<p class="description" data-text="description">Interactive review and filtering of eukaryotic genome assemblies by length, reads coverage and EukContigMiner labels</p>
+<section class="panel">
+<div class="section-heading"><div><h2 data-text="inputsTitle">Inputs</h2></div></div>
+<div class="file-actions">
+<label class="file-button"><span data-text="fastaButton">FASTA files</span><span id="fastaCount" class="count">0</span><input id="fastaFiles" type="file" accept=".fasta,.fa,.fna,.fas" multiple></label>
+<label class="file-button"><span data-text="coverageButton">Coverage tables</span><span id="coverageCount" class="count">0</span><input id="coverageFiles" type="file" accept=".tsv,.txt" multiple></label>
+<label class="file-button"><span data-text="ecmButton">EukContigMiner tables</span><span id="ecmCount" class="count">0</span><input id="ecmFiles" type="file" accept=".tsv,.txt" multiple></label>
+</div>
+<p class="hint" data-text="matching">Check the sample names and file assignments below.</p>
+<div id="empty" class="empty" data-text="empty">Your samples will appear here.</div>
+<div id="sampleWrap" class="table-scroll" hidden><table><thead><tr><th data-text="sample">Sample</th><th>FASTA</th><th data-text="coverageButton">Coverage tables</th><th data-text="ecmButton">EukContigMiner tables</th></tr></thead><tbody id="sampleRows"></tbody></table></div>
+</section>
+<section class="panel">
+<div class="section-heading"><div><h2 data-text="columnsTitle">Columns</h2><p data-text="columnsHelp">Choose the corresponding columns. Sequence IDs must match the first word in each FASTA header.</p></div></div>
+<div class="mapping-grid">
+<fieldset><legend data-text="coverageLegend">Coverage table</legend><div class="fields"><label><span data-text="sequenceId">Sequence ID</span><select id="coverageId"></select></label><label><span data-text="readsCoverage">Reads coverage</span><select id="coverageValue"></select></label></div></fieldset>
+<fieldset><legend data-text="ecmLegend">EukContigMiner table</legend><div class="fields"><label><span data-text="sequenceId">Sequence ID</span><select id="ecmId"></select></label><label><span data-text="ecmLabel">Label</span><select id="ecmLabel"></select></label><label><span data-text="ecmLength">Length check</span><select id="ecmLength"></select></label></div></fieldset>
+</div>
+</section>
+<div class="begin-row"><label class="project-name"><span data-text="projectName">Project name</span><input id="projectName" value="Assembly review" maxlength="120"></label><div class="begin-actions"><label class="file-button saved-review"><span id="decisionCaption" data-text="savedDecisions">Import review (.json)</span><input id="decisionFile" type="file" accept=".json"></label><button id="clearDecisions" class="quiet" aria-label="Clear imported review" hidden>×</button><button id="prepare" class="primary" data-text="prepare">Prepare review →</button></div></div>
+</main>
+<section id="reviewArea" hidden>
+<iframe id="reviewFrame" title="Assembly review" sandbox="allow-scripts allow-same-origin allow-downloads allow-popups allow-popups-to-escape-sandbox"></iframe>
+</section>
+<div id="activity" class="activity" hidden role="status"><div><span id="activityText"></span><button id="cancel" class="quiet" data-text="cancel">Cancel</button></div><progress id="progress" max="1" value="0"></progress></div>
+<p id="error" class="error" role="alert" hidden></p>
+<p id="downloadStatus" class="download-status" role="status" hidden></p>
+<footer><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a></footer>
+<script src="app.js"></script>
+</body></html>

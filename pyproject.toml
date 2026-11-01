@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "EukAsmChecker"
+version = "1.0"
+description = "Interactive review and filtering of eukaryotic genome assemblies"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [{name = "WeStrainGroup"}]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Operating System :: POSIX",
+]
+
+[project.urls]
+Repository = "https://github.com/WeStrainGroup/EukAsmChecker"
+Issues = "https://github.com/WeStrainGroup/EukAsmChecker/issues"
+
+[project.scripts]
+eukasmchecker = "eukasmchecker.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+eukasmchecker = ["review.html"]
