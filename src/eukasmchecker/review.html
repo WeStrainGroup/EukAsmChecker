@@ -502,7 +502,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
       const lo=Math.max(0,Math.log10(minL)-.12),hi=Math.max(lo+.5,Math.log10(maxL)+.12),yc=yT(Math.max(1,maxC))*1.07;
       geometry={...box,w,h,x:scale(lo,hi,box.left,box.right,Math.log10,v=>10**v),y:scale(0,yc,box.bottom,box.top,yT,yI)};
     }
-    const g=geometry;preparePointLayers(g,dpr);if(marginal)drawDistributions(ctx,g);ctx.font='12px -apple-system, sans-serif';ctx.strokeStyle="#ededee";ctx.lineWidth=1;ctx.fillStyle="#6e6e73";
+    const g=geometry;preparePointLayers(g,dpr,s);if(marginal)drawDistributions(ctx,g);ctx.font='12px -apple-system, sans-serif';ctx.strokeStyle="#ededee";ctx.lineWidth=1;ctx.fillStyle="#6e6e73";
     const xTicks=[];
     for(let power=Math.floor(g.x.a);power<=Math.ceil(g.x.b);power++)for(const factor of [1,5]){const v=factor*10**power;if(Math.log10(v)>=g.x.a&&Math.log10(v)<=g.x.b)xTicks.push(v);}
     let last=-Infinity;const gap=w<480?68:54;
@@ -540,44 +540,69 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     $("coverageRange").value=Number.isFinite(s.coverage)?Math.max(0,Math.min(1000,yT(s.coverage)/g.y.b*1000)):0;
     $("maxCoverageRange").value=Math.max(0,Math.min(1000,yT(upper)/g.y.b*1000));
   }
-  // Cache the two point appearances once per sample and axis layout.
-  // Threshold movement then clips these layers instead of redrawing every dot.
-  function preparePointLayers(g,dpr){
-    const key=[g.w,g.h,dpr,g.x.a,g.x.b,g.y.b].join("/");
-    if(pointLayers?.key===key)return;
-    const layers=availableLabels.map((label,index)=>[.22,.55].map(alpha=>{
-      const canvas=document.createElement("canvas");
-      canvas.width=Math.round(g.w*dpr);canvas.height=Math.round(g.h*dpr);
-      const context=canvas.getContext("2d");context.scale(dpr,dpr);
-      context.globalAlpha=alpha;context.fillStyle=labelColor(index);
-      return {canvas,context};
-    }));
-    hoverPoints=rows.map(r=>{
-      const x=g.x.f(r.length),y=g.y.f(r.coverage),label=availableLabels.indexOf(r.label);
-      for(const layer of layers[label]){
-        layer.context.beginPath();layer.context.arc(x,y,2,0,Math.PI*2);layer.context.fill();
+  // Shuffle once per sample. Both cached appearances use the same mixed-label order.
+  // Threshold movement clips the caches, so dragging never reorders or redraws points.
+  function preparePointLayers(g, dpr, settings) {
+    const selectedLabels = new Set(!result ? availableLabels : settings.retain_sample ? settings.labels : []);
+    const geometryKey = [g.w, g.h, dpr, g.x.a, g.x.b, g.y.b].join("/");
+    const selectionKey = availableLabels.map(label => selectedLabels.has(label)).join(",");
+    if (pointLayers?.geometryKey === geometryKey && pointLayers.selectionKey === selectionKey) return;
+
+    let order = pointLayers?.order;
+    if (!order) {
+      order = Array.from({length: rows.length}, (_, index) => index);
+      let seed = 6311;
+      for (let index = order.length - 1; index > 0; index--) {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        const other = Math.floor(seed / 4294967296 * (index + 1));
+        [order[index], order[other]] = [order[other], order[index]];
       }
-      return {x,y,r,label,
-        xBin:Math.max(0,Math.min(47,Math.floor((x-g.left)/(g.right-g.left)*48))),
-        yBin:Math.max(0,Math.min(47,Math.floor((g.bottom-y)/(g.bottom-g.top)*48)))};
+    }
+
+    const sameGeometry = pointLayers?.geometryKey === geometryKey;
+    const layers = sameGeometry ? pointLayers.layers : [0, 1].map(() => {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(g.w * dpr);
+      canvas.height = Math.round(g.h * dpr);
+      const context = canvas.getContext("2d");
+      context.scale(dpr, dpr);
+      return {canvas, context};
     });
-    pointLayers={key,layers};
-  }
-  function drawPoints(ctx,g,s,lx,cy,uy){
-    const left=Math.max(g.left,Math.min(g.right,lx));
-    const top=s.maxCoverage===null?g.top:Math.max(g.top,Math.min(g.bottom,uy));
-    const bottom=cy===null?g.bottom:Math.max(g.top,Math.min(g.bottom,cy));
-    for(let pass=0;pass<2;pass++)for(let label=0;label<availableLabels.length;label++){
-      const included=!result||(s.retain_sample&&s.labels.includes(availableLabels[label]));
-      if(pass===1&&!included)continue;
-      ctx.save();ctx.beginPath();
-      if(pass===0)ctx.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);
-      if(included){
-        if(!result)ctx.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);
-        else ctx.rect(left,top,g.right-left,Math.max(0,bottom-top));
+    if (!sameGeometry) {
+      hoverPoints = rows.map(r => ({
+        x: g.x.f(r.length), y: g.y.f(r.coverage), r,
+        label: availableLabels.indexOf(r.label),
+        xBin: Math.max(0, Math.min(47, Math.floor((g.x.f(r.length) - g.left) / (g.right - g.left) * 48))),
+        yBin: Math.max(0, Math.min(47, Math.floor((g.bottom - g.y.f(r.coverage)) / (g.bottom - g.top) * 48)))
+      }));
+    }
+    for (let appearance = 0; appearance < layers.length; appearance++) {
+      if (appearance === 0 && sameGeometry) continue;
+      const context = layers[appearance].context;
+      context.clearRect(0, 0, g.w, g.h);
+      for (const index of order) {
+        const point = hoverPoints[index];
+        context.globalAlpha = appearance === 1 && selectedLabels.has(point.r.label) ? .55 : .22;
+        context.fillStyle = labelColor(point.label);
+        context.beginPath();
+        context.arc(point.x, point.y, 2, 0, Math.PI * 2);
+        context.fill();
       }
+    }
+    pointLayers = {geometryKey, selectionKey, order, layers};
+  }
+  function drawPoints(ctx, g, settings, lx, cy, uy) {
+    const left = Math.max(g.left, Math.min(g.right, lx));
+    const top = settings.maxCoverage === null ? g.top : Math.max(g.top, Math.min(g.bottom, uy));
+    const bottom = cy === null ? g.bottom : Math.max(g.top, Math.min(g.bottom, cy));
+    for (let appearance = 0; appearance < 2; appearance++) {
+      ctx.save();
+      ctx.beginPath();
+      if (appearance === 0) ctx.rect(g.left, g.top, g.right - g.left, g.bottom - g.top);
+      if (!result) ctx.rect(g.left, g.top, g.right - g.left, g.bottom - g.top);
+      else ctx.rect(left, top, g.right - left, Math.max(0, bottom - top));
       ctx.clip("evenodd");
-      ctx.drawImage(pointLayers.layers[label][pass].canvas,0,0,g.w,g.h);
+      ctx.drawImage(pointLayers.layers[appearance].canvas, 0, 0, g.w, g.h);
       ctx.restore();
     }
   }

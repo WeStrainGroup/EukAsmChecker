@@ -1,4 +1,4 @@
-{% set version = "1.0" %}
+{% set version = "1.1" %}
 
 package:
   name: eukasmchecker
@@ -6,7 +6,7 @@ package:
 
 source:
   url: https://github.com/WeStrainGroup/EukAsmChecker/releases/download/{{ version }}/eukasmchecker-{{ version }}.tar.gz
-  sha256: 8933c06842cb4841517071a33f1b57c7a8a00498521e92a3ad792b92c7d4e1a9
+  sha256: f586f37a4930f9c06227bae777dba3b53c8773cbde72f9d8f0c41498acbd412b
 
 build:
   number: 0

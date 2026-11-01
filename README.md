@@ -117,6 +117,8 @@ Removal reasons are short_length, low_coverage, high_coverage and excluded_label
 
 The web and command-line versions use the same rules.
 
+Scatter points use a reproducible random drawing order across labels (seed 6311).
+
 | Setting | Default and behavior |
 |---|---|
 | Minimum length | 500 bp. |

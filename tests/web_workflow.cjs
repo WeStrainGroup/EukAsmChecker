@@ -26,7 +26,7 @@ for (const sample of inputContext.samples) {
   assert.equal(inputContext.files.ecm[sample.ecm].name, sample.id + ".classification.tsv");
 }
 
-// Cached point layers must preserve the filter result at every sequence centre.
+// Mixed-label caches must preserve filtering, seeded order and threshold-drag reuse.
 const reviewSource = fs.readFileSync(path.join(root, "src/eukasmchecker/review.html"), "utf8");
 let rasterizedPoints = 0;
 const renderRows = [
@@ -35,51 +35,88 @@ const renderRows = [
   {length: 1000, coverage: 20, label: "other"},
   {length: 2000, coverage: 30, label: "eukaryota"}
 ];
+function mockCanvas() {
+  const canvas = {points: []};
+  const context = {
+    scale() {}, beginPath() {},
+    clearRect() {canvas.points = [];},
+    arc(x, y) {this.point = {x, y}; rasterizedPoints++;},
+    fill() {canvas.points.push({...this.point, color: this.fillStyle, alpha: this.globalAlpha});}
+  };
+  canvas.getContext = () => context;
+  return canvas;
+}
 const renderContext = {
   pointLayers: null, hoverPoints: [], rows: renderRows,
-  availableLabels: ["eukaryota", "other", "NA"], labelColor: () => "black",
-  document: {createElement: () => ({getContext: () => ({
-    scale() {}, beginPath() {}, arc() {rasterizedPoints++;}, fill() {}
-  })})}
+  availableLabels: ["eukaryota", "other", "NA"], labelColor: index => String(index),
+  document: {createElement: mockCanvas}
 };
 vm.createContext(renderContext);
 vm.runInContext(reviewSource.slice(reviewSource.indexOf("  function preparePointLayers("), reviewSource.indexOf("  function drawDistributions(")), renderContext);
 const geometry = {w: 300, h: 200, left: 20, right: 280, top: 20, bottom: 180,
   x: {a: 2, b: 4, f: length => 20 + (Math.log10(length) - 2) / 2 * 260},
   y: {b: 5, f: coverage => 180 - Math.asinh(coverage) / 5 * 160}};
-renderContext.preparePointLayers(geometry, 1);
-const originalLayers = renderContext.pointLayers;
-renderContext.preparePointLayers(geometry, 1);
-assert.equal(renderContext.pointLayers, originalLayers);
-assert.equal(rasterizedPoints, renderRows.length * 2);
-for (const point of renderContext.hoverPoints) {
-  assert.equal(point.xBin, Math.floor((Math.log10(point.r.length) - 2) / 2 * 48));
-  assert.equal(point.yBin, Math.floor(Math.asinh(point.r.coverage) / 5 * 48));
-}
 for (const retain of [true, false]) for (const labels of [["eukaryota"], ["other", "NA"], ["eukaryota", "other", "NA"]]) {
-  const state = {length: 500, coverage: 10, maxCoverage: 20, retain_sample: retain, labels};
-  renderContext.result = EACCore.evaluate(renderRows, state);
+  const settings = {length: 500, coverage: 10, maxCoverage: 20, retain_sample: retain, labels};
+  renderContext.result = EACCore.evaluate(renderRows, settings);
+  renderContext.preparePointLayers(geometry, 1, settings);
+  const cached = renderContext.pointLayers;
+  const rendered = rasterizedPoints;
   const shown = renderRows.map(() => []);
   let rectangles = [];
   const context = {
     save() {}, restore() {}, beginPath() {rectangles = [];},
     rect(x, y, w, h) {rectangles.push({x, y, w, h});}, clip() {},
     drawImage(canvas) {
-      const label = renderContext.pointLayers.layers.findIndex(pair => pair.some(layer => layer.canvas === canvas));
-      const pass = renderContext.pointLayers.layers[label].findIndex(layer => layer.canvas === canvas);
-      renderContext.hoverPoints.forEach((point, index) => {
+      for (const point of canvas.points) {
+        const index = renderContext.hoverPoints.findIndex(item => item.x === point.x && item.y === point.y);
         const inside = rectangles.filter(r => point.x >= r.x && point.x <= r.x + r.w && point.y >= r.y && point.y <= r.y + r.h).length % 2;
-        if (point.label === label && inside) shown[index].push(pass);
-      });
+        if (inside) shown[index].push(point.alpha);
+      }
     }
   };
-  renderContext.drawPoints(context, geometry, state, geometry.x.f(500), geometry.y.f(10), geometry.y.f(20));
-  shown.forEach((passes, index) => assert.deepEqual(passes, [Number(renderContext.result.annotated[index].keep)]));
+  renderContext.drawPoints(context, geometry, settings, geometry.x.f(500), geometry.y.f(10), geometry.y.f(20));
+  shown.forEach((alphas, index) => assert.deepEqual(alphas, [renderContext.result.annotated[index].keep ? .55 : .22]));
+  const changedThresholds = {...settings, length: 800, coverage: 15, maxCoverage: 25};
+  renderContext.result = EACCore.evaluate(renderRows, changedThresholds);
+  renderContext.preparePointLayers(geometry, 1, changedThresholds);
+  assert.equal(renderContext.pointLayers, cached);
+  assert.equal(rasterizedPoints, rendered);
 }
-assert.equal(rasterizedPoints, renderRows.length * 2);
-renderContext.preparePointLayers({...geometry, w: 320}, 1);
-assert.notEqual(renderContext.pointLayers, originalLayers);
-console.log("Point-layer reuse and threshold/label/exclusion rendering passed.");
+// Fully overlapping, initially label-sorted input must be interleaved on both layers.
+const overlapRows = ["eukaryota", "other", "NA"].flatMap(label =>
+  Array.from({length: 30}, () => ({length: 1000, coverage: 20, label})));
+renderContext.rows = overlapRows;
+renderContext.pointLayers = null;
+const allLabels = {length: 500, coverage: 10, maxCoverage: null, retain_sample: true, labels: ["eukaryota", "other", "NA"]};
+renderContext.result = EACCore.evaluate(overlapRows, allLabels);
+renderContext.preparePointLayers(geometry, 1, allLabels);
+const firstOrder = Array.from(renderContext.pointLayers.order);
+assert.equal(new Set(firstOrder).size, overlapRows.length);
+const colors = renderContext.pointLayers.layers[1].canvas.points.map(point => point.color);
+assert.deepEqual(renderContext.pointLayers.layers[0].canvas.points.map(point => point.color), colors);
+assert(colors.filter((color, index) => index > 0 && color !== colors[index - 1]).length > 30);
+for (const color of ["0", "1", "2"]) assert.equal(colors.filter(value => value === color).length, 30);
+const fadedCanvas = renderContext.pointLayers.layers[0].canvas;
+const beforeSelection = rasterizedPoints;
+const eukOnly = {...allLabels, labels: ["eukaryota"]};
+renderContext.result = EACCore.evaluate(overlapRows, eukOnly);
+renderContext.preparePointLayers(geometry, 1, eukOnly);
+assert.equal(renderContext.pointLayers.layers[0].canvas, fadedCanvas);
+assert.equal(rasterizedPoints - beforeSelection, overlapRows.length);
+assert.deepEqual(renderContext.pointLayers.layers[1].canvas.points.map(point => point.color), colors);
+for (const point of renderContext.pointLayers.layers[1].canvas.points) assert.equal(point.alpha, point.color === "0" ? .55 : .22);
+renderContext.preparePointLayers({...geometry, w: 320}, 2, eukOnly);
+assert.deepEqual(Array.from(renderContext.pointLayers.order), firstOrder);
+renderContext.pointLayers = null;
+renderContext.preparePointLayers(geometry, 1, eukOnly);
+assert.deepEqual(Array.from(renderContext.pointLayers.order), firstOrder);
+renderContext.rows = [];
+renderContext.pointLayers = null;
+renderContext.result = null;
+renderContext.preparePointLayers(geometry, 1, allLabels);
+assert.equal(renderContext.pointLayers.layers[0].canvas.points.length, 0);
+console.log("Seeded mixed-label order, cache reuse and filtering appearance passed.");
 
 (async()=>{
   const fasta=Buffer.from(">a full header\r\n"+"A".repeat(10001)+"\r\n>b\n"+"C".repeat(500)+"\n>c\n"+"G".repeat(499)+"\n>d tail\r\n"+"T".repeat(935)+"\r\n");

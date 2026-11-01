@@ -45,7 +45,7 @@ self.addEventListener("message",async event=>{
       }
       const meta=[...samples.values()].map(sample=>sample.meta).sort((a,b)=>a.sample_id.localeCompare(b.sample_id,"en"));
       const identity=sha256(JSON.stringify(meta.map(sample=>[sample.sample_id,sample.fingerprint,sample.eac_sha256,sample.eac_path])));
-      manifest={schema_version:3,tool_version:"1.0",browser_local:true,dataset_id:identity,
+      manifest={schema_version:3,tool_version:"1.1",browser_local:true,dataset_id:identity,
         project_name:message.projectName||"Assembly review",columns:["seq_id","length_bp","coverage","ecm_label"],samples:meta};
       self.postMessage({id:message.id,type:"result",value:manifest});
     }else if(message.type==="payload"){
