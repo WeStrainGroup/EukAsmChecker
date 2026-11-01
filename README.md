@@ -75,6 +75,8 @@ contig_4	499	NA
 
 Try the review interface with the [interactive example](https://westraingroup.github.io/EukAsmChecker/?demo=1).
 
+Click a point to toggle its selection. Drag a rectangle to select its sequences, or to deselect them when the whole region is already selected. Other selections are preserved. Use **Remove selected** or Delete to apply the exclusions. **Restore manual removals** restores those sequences to threshold-based filtering. Manual removals are saved in decisions.json and applied to FASTA and tables.
+
 ```bash
 eukasmchecker review project/ --threads 8
 # Create a portable offline review page
@@ -111,7 +113,7 @@ contig_3	750	7.25	eukaryota	removed	low_coverage
 contig_4	499	0	NA	removed	short_length;low_coverage
 ```
 
-Removal reasons are short_length, low_coverage, high_coverage and excluded_label. Multiple reasons are joined with semicolons. Excluding a sample produces an empty FASTA and excluded_sample for every sequence.
+Removal reasons are short_length, low_coverage, high_coverage, excluded_label and manual_exclusion. Multiple reasons are joined with semicolons. Excluding a sample produces an empty FASTA and excluded_sample for every sequence.
 
 ## Filtering rules
 
@@ -125,9 +127,10 @@ Scatter points use a reproducible random drawing order across labels (seed 6311)
 | Minimum coverage | `round(max(reference median / 25, 10))`. The reference set is original sequences labelled `eukaryota` with length >10 kb. Set a minimum manually if this set is empty. |
 | Maximum coverage | The original maximum, rounded upward; no sequences are removed by default. |
 | Included labels | All labels are selected initially; any nonempty subset can be retained. |
+| Manual removals | None initially. Selected sequence IDs remain excluded until restored. Reset defaults also clears manual removals. |
 | Retain sample | On by default. Turning it off removes every sequence in that sample. |
 
-A retained sequence must meet the length minimum, both inclusive coverage bounds and a selected label. Coverage is the per-sequence mean from the input table. Reference sequences receive equal weight, including zero coverage. Thresholds are integers, with half values rounded upward; filtering and output tables preserve original coverage precision. For example, 84.9343× is below an 85× minimum even when displayed as 85×.
+Retention uses the length minimum, both inclusive coverage bounds, selected labels and saved manual removals. Coverage is the per-sequence mean from the input table. Reference sequences receive equal weight, including zero coverage. Thresholds are integers, with half values rounded upward; filtering and output tables preserve original coverage precision. For example, 84.9343× is below an 85× minimum even when displayed as 85×.
 
 [EukContigMiner](https://github.com/WeStrainGroup/EukContigMiner#metrics) (ECM) is less reliable for short contigs. For 500–1,000 bp contigs, the test F1 is approximately 0.9 at 1% eukaryotic prevalence. Some short contigs within the main assembly cluster may therefore be labelled `other` through classification error; assess their coverage and cluster position together with the label. ECM does not classify sequences below 500 bp, which retain `NA`.
 

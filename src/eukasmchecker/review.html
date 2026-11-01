@@ -85,6 +85,13 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
  .controls label,.controls .control-label,.resetline #mode{min-height:32px;font-size:11px;line-height:16px}
 }
 @container(max-width:534px){.controls{grid-template-columns:repeat(2,minmax(0,1fr))}.resetline{max-width:110px}.plotbar{padding-left:0}}
+.selection-tools{display:flex;justify-content:flex-end;margin:0 0 6px;font-size:11px}
+.selection-group{display:grid;gap:4px;max-width:100%}
+.selection-actions{display:flex;gap:6px;flex-wrap:wrap}
+.selection-tools button{font-size:11px;padding:4px 8px;min-height:27px}
+#selectionHint{color:#6e6e73}
+#selectionCount{position:absolute;top:2px;right:66px;font-size:11px;color:#515157;background:#ffffffdd;padding:2px 5px;border-radius:4px;pointer-events:none}
+#selectionBox{position:absolute;border:1px solid #515157;background:#51515712;pointer-events:none;z-index:3}
 </style></head><body>
 <header><div><h1 data-i18n="title">EukAsmChecker</h1><div class="header-meta"><div id="projectTitle" class="small muted"></div><div id="saveStatus" class="small muted" aria-live="polite"></div></div></div><div><div class="toolbar"><div class="language-toggle" role="group" aria-label="Language"><button id="langEn" type="button" aria-pressed="true">English</button><button id="langZh" type="button" aria-pressed="false">中文</button></div><button id="restore" type="button" data-i18n="restore">Import decisions</button><button id="save" class="primary" type="button" data-i18n="save">Save decisions</button><input id="restoreFile" type="file" accept=".json" hidden></div></div></header>
 <div class="shell"><aside><label class="sr-only" for="search" data-i18n="search">Search samples</label><input id="search" class="sidebar-control" type="search"><button id="onlyPending" class="sidebar-control" type="button" aria-pressed="false" data-i18n="onlyPending">Unreviewed only</button><button id="markAll" class="sidebar-control" type="button" disabled data-i18n="markAll">Mark all reviewed</button><div id="progress" class="small muted" aria-live="polite"></div><nav id="sampleList" aria-label="Project samples"></nav></aside><div id="splitter" role="separator" aria-orientation="vertical" aria-label="Resize sample sidebar" tabindex="0" aria-valuemin="150" aria-valuemax="520" aria-valuenow="230"></div>
@@ -93,7 +100,8 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 <details class="module" id="filteringModule" open><summary data-i18n="filteringTitle">Filtering</summary>
 <div class="filtering-layout"><div class="controls"><div class="threshold-control"><label for="length" data-i18n="minLength">Minimum length (bp)</label><input id="length" type="number" min="0" step="1"><input id="lengthRange" type="range" min="0" max="1000"></div><div class="threshold-control"><div class="coverage-heading"><label id="coverageHeading" for="coverage" data-i18n="minCoverage" tabindex="0" aria-describedby="reference">Minimum coverage (×)</label><div id="reference" role="tooltip" hidden></div></div><input id="coverage" type="number" min="0" step="1"><input id="coverageRange" type="range" min="0" max="1000"></div><div class="threshold-control"><label for="maxCoverage" data-i18n="maxCoverage">Maximum coverage (×)</label><input id="maxCoverage" type="number" min="0" step="1"><input id="maxCoverageRange" type="range" min="0" max="1000"></div><div class="label-control"><span class="control-label" id="labelTitle" data-i18n="labels">EukContigMiner (ECM) labels</span><div id="labels" role="group" aria-labelledby="labelTitle"></div></div><div class="resetline"><span id="mode"></span><button id="reset" type="button" data-i18n="reset">Reset defaults</button></div><div class="distribution-control"><label for="distributionMode" data-i18n="distributionMode">Distributions</label><select id="distributionMode"><option value="filter" data-i18n="distributionFilter">filtering</option><option value="label" data-i18n="distributionLabels">all labels</option><option value="euk-other" selected data-i18n="distributionEukOther">euk + other</option></select></div><div class="plot-size-control"><label for="plotPercent" data-i18n="plotSizeLabel">Plot size (%)</label><input id="plotPercent" type="number" min="50" max="100" step="1" value="100"></div></div>
 <div class="filtering-plot"><div class="plotbar"><div class="legend" id="legend"></div></div>
-<div id="plot"><canvas id="canvas" role="img"></canvas><div id="tooltip" class="tooltip" role="tooltip" hidden></div></div>
+<div class="selection-tools"><div class="selection-group"><span id="selectionHint" data-i18n="selectPoints">Click or drag to select</span><div class="selection-actions"><button id="removeSelected" type="button" disabled data-i18n="removeSelected">Remove selected</button><button id="clearSelection" type="button" disabled data-i18n="clearSelection">Clear selection</button><button id="restoreManual" type="button" disabled data-i18n="restoreManual">Restore manual removals</button></div></div></div>
+<div id="plot"><canvas id="canvas" role="img" tabindex="0"></canvas><div id="selectionBox" hidden></div><span id="selectionCount" aria-live="polite" hidden></span><div id="tooltip" class="tooltip" role="tooltip" hidden></div></div>
 </div></div>
 </details>
 <details class="module" id="summaryModule" open><summary id="summaryTitle" data-i18n="summaryTitle">Summary</summary>
@@ -107,14 +115,20 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 </tbody></table>
 </section></details>
 <details class="module" id="noteModule" open><summary id="noteTitle" data-i18n="note">Note</summary><div class="reviewline"><textarea id="note" aria-labelledby="noteTitle"></textarea></div></details>
-<details class="module" id="ruleModule"><summary data-i18n="rulesTitle">Rule</summary><ul><li data-i18n="ruleReference"></li><li id="labelHint" data-i18n="ruleThreshold"></li><li data-i18n="ruleDisplay"></li><li data-i18n="ruleInterpretation"></li><li data-i18n="ruleOutput"></li></ul><p><a href="https://github.com/WeStrainGroup/EukAsmChecker#filtering-rules" target="_blank" rel="noopener" data-i18n="fullDocumentation">Full methods and file formats</a></p></details>
+<details class="module" id="ruleModule"><summary data-i18n="rulesTitle">Rule</summary><ul><li data-i18n="ruleReference"></li><li id="labelHint" data-i18n="ruleThreshold"></li><li data-i18n="ruleDisplay"></li><li data-i18n="ruleSelection"></li><li data-i18n="ruleInterpretation"></li><li data-i18n="ruleOutput"></li></ul><p><a href="https://github.com/WeStrainGroup/EukAsmChecker#filtering-rules" target="_blank" rel="noopener" data-i18n="fullDocumentation">Full methods and file formats</a></p></details>
 </div></main></div>
 <script>
 "use strict";
 const PROJECT=/*PROJECT_MANIFEST*/null;
 const C={
+ exclusions(ids, knownIds){
+  if(!Array.isArray(ids)||ids.some(id=>typeof id!=="string"||!id)||new Set(ids).size!==ids.length)throw new Error("Invalid manual exclusions.");
+  const known=new Set(knownIds),excluded=new Set(ids);
+  for(const id of excluded)if(!known.has(id))throw new Error("Unknown manually excluded sequence: "+id);
+  return excluded;
+ },
  reference(rows){const v=rows.filter(r=>r.length>10000&&r.label==="eukaryota").map(r=>r.coverage).sort((a,b)=>a-b),n=v.length,m=n?v[Math.floor(n/2)]/2+v[Math.floor((n-1)/2)]/2:null;return{n,median:m,min:n?v[0]:null,max:n?v[n-1]:null,cutoff:m===null?null:Math.round(Math.max(m/25,10))};},
- reasons(r,s){if(s.retain_sample===false)return ["excluded_sample"];const a=[];if(r.length<s.length)a.push("short_length");if(r.coverage<s.coverage)a.push("low_coverage");if(s.maxCoverage!==null&&s.maxCoverage!==undefined&&r.coverage>s.maxCoverage)a.push("high_coverage");if(!s.labels.includes(r.label))a.push("excluded_label");return a;},
+ reasons(r,s){if(s.retain_sample===false)return ["excluded_sample"];const a=[];if(r.length<s.length)a.push("short_length");if(r.coverage<s.coverage)a.push("low_coverage");if(s.maxCoverage!==null&&s.maxCoverage!==undefined&&r.coverage>s.maxCoverage)a.push("high_coverage");if(!s.labels.includes(r.label))a.push("excluded_label");if(s.excludedIds?.has(r.id))a.push("manual_exclusion");return a;},
  evaluate(rows,s){const groups={};let kept=0,bp=0,keptBp=0;const annotated=rows.map(r=>{const why=this.reasons(r,s),keep=!why.length,g=groups[r.label]??=( {count:0,bp:0,kept:0,keptBp:0});g.count++;g.bp+=r.length;bp+=r.length;if(keep){kept++;keptBp+=r.length;g.kept++;g.keptBp+=r.length;}return{keep,reasons:why};});return{annotated,groups,count:rows.length,kept,bp,keptBp};}
 };
 (async () => {
@@ -158,6 +172,18 @@ ruleInterpretation:"ECM 标签：短序列预测较不可靠（500–1,000 bp、
 autoSaved:"进度已保存在此浏览器",saveBackup:"请导出审阅结果备份进度",restored:"已恢复审阅进度",noMatches:"没有匹配的样本",loading:"正在读取样本…",loadFailed:"样本读取失败",loadHelp:"请保持 index.html 与 data 文件夹在同一目录。",wrongData:"样本数据与项目清单不匹配。",wrongStats:"样本统计与项目清单不一致。",wrongDocument:"审阅文件与当前项目数据不匹配。",wrongSample:"样本或输入指纹不匹配：",wrongFields:"审阅字段无效：",wrongThresholds:"阈值无效：",wrongReviewed:"已审阅样本缺少有效参数或统计：",restoredMismatch:"恢复的统计与当前筛选条件不一致，该样本已标为未审阅。",allDone:"全部样本已审阅，请导出审阅结果。",lastSample:"已到最后一个样本，仍有样本尚未审阅。",autoRestoreFailed:"自动恢复失败：",restoreHelp:"可导入已保存的审阅文件恢复进度。",invalid:"请设置有效阈值并选择至少一个标签。",defaultMode:"默认阈值",manualMode:"已手动调整筛选条件",threshold:"阈值",faded:"淡色 = 移除",xAxis:"片段长度（bp）",yAxis:"Reads coverage（×）",plotAlt:"按 ECM 标签区分的长度与 reads coverage 散点图，可拖动红色阈值线调整筛选条件。",adjustLength:"调整最小长度",adjustCoverage:"调整最低 coverage",pendingThresholds:"待判断：请设置有效筛选条件",retained:"保留",removed:"移除",passes:"满足全部所选条件",short_length:"长度低于下限",low_coverage:"coverage 低于下限",excluded_label:"未选择该 ECM 标签",noReference:"没有同时满足 ECM 标签为 euk 且长度 >10,000 bp 的原始片段，无法计算参考中位数和范围；请手动设置最低 coverage。",
 reference:(n,mn,lo,hi,cut)=>"参考集合包含 "+n+" 条标签为 euk 且长度 >10 kb 的原始序列。它们的 reads coverage 中位数为 "+mn+"×，范围为 "+lo+"–"+hi+"×。默认最低 coverage 为 "+cut+"×。"
 }};
+Object.assign(translations.en,{
+ removeSelected:"Remove selected",clearSelection:"Clear selection",restoreManual:"Restore manual removals",
+ selectPoints:"Click or drag to select",selectedCount:n=>n+" selected",manualCount:n=>n+" manually removed",
+ selectionHelp:"Click a point to toggle selection. Drag selects an area, or deselects it when all its points are selected. Delete removes selected sequences. Escape clears the selection.",
+ manual_exclusion:"manually removed",ruleSelection:"Click toggles a point. Drag selects a region, or deselects a fully selected region. Remove selected applies exclusions. Restore manual removals undoes them."
+});
+Object.assign(translations.zh,{
+ removeSelected:"移除选中",clearSelection:"清空选择",restoreManual:"恢复手动移除",
+ selectPoints:"点击或拖框选择",selectedCount:n=>"已选择 "+n+" 条",manualCount:n=>"已手动移除 "+n+" 条",
+ selectionHelp:"点击切换单点选择。框选区域，若区域内全部已选中则取消选择。Delete 移除选中序列，Esc 清空选择。",
+ manual_exclusion:"手动移除",ruleSelection:"点击切换单点选择。框选区域，全部已选中时再次框选会取消选择。“移除选中”应用排除，“恢复手动移除”撤销排除。"
+});
 let lang="en";
 try{lang=localStorage.getItem("genome-review-language")==="zh"?"zh":"en";}catch(e){}
 const t=k=>translations[lang][k],tagName=k=>k==="eukaryota"?"euk":k,reasonText=k=>t(k);
@@ -184,14 +210,15 @@ const availableLabels=[...new Set(["eukaryota","other","NA",...PROJECT.samples.f
 const normalizeLabels=v=>v==="all"?[...availableLabels]:typeof v==="string"?[v]:Array.isArray(v)?[...v]:null;
 const validLabels=v=>Array.isArray(v)&&v.length>0&&new Set(v).size===v.length&&v.every(k=>availableLabels.includes(k));
 let pointLayers=null,refreshFrame=0;
+let selectedIds=new Set(),selectionDrag=null;
 let ordered=null,originalSummary=null;let rows=[],settings=new Map(),sample="",ref=null,result=null,geometry=null,hoverPoints=[],drag=null,loadTag=null,saveTimer=null,loaded=false,statusKey="";
 const storageKey="genome-review-v2:"+PROJECT.dataset_id;
 const metadata=new Map(PROJECT.samples.map(m=>[m.sample_id,m]));
 const state=()=>settings.get(sample),error=m=>{$("message").textContent=m||"";},setStatus=k=>{statusKey=k;$("saveStatus").textContent=t(k);};
 const valid=s=>s.retain_sample===false||(Number.isSafeInteger(s.length)&&s.length>=0&&Number.isSafeInteger(s.coverage)&&s.coverage>=0&&(s.maxCoverage===null||(Number.isSafeInteger(s.maxCoverage)&&s.maxCoverage>=s.coverage))&&validLabels(s.labels));
 const exampleNote=m=>PROJECT.browser_demo&&m?.example?m.example[lang]:"";
-for(const m of PROJECT.samples)settings.set(m.sample_id,{retain_sample:true,maxCoverage:null,length:500,coverage:m.reference.min_coverage===null?null:Math.round(m.reference.min_coverage),labels:[...availableLabels],mode:"default",reviewed:false,reviewed_at:null,note:exampleNote(m),expected_kept_contigs:null,expected_kept_bp:null});
-function documentData(){return{schema_version:7,dataset_id:PROJECT.dataset_id,exported_at:new Date().toISOString(),samples:PROJECT.samples.map(m=>{const s=settings.get(m.sample_id);return{sample_id:m.sample_id,fingerprint:m.fingerprint,eac_path:m.eac_path,eac_sha256:m.eac_sha256,retain_sample:s.retain_sample,min_length_bp:s.length,min_coverage:s.coverage,max_coverage:s.maxCoverage,labels:[...s.labels],mode:s.mode,reviewed:s.reviewed,reviewed_at:s.reviewed_at,note:s.note,expected_kept_contigs:s.expected_kept_contigs,expected_kept_bp:s.expected_kept_bp};})};}
+for(const m of PROJECT.samples)settings.set(m.sample_id,{retain_sample:true,maxCoverage:null,length:500,coverage:m.reference.min_coverage===null?null:Math.round(m.reference.min_coverage),labels:[...availableLabels],excludedIds:new Set(),mode:"default",reviewed:false,reviewed_at:null,note:exampleNote(m),expected_kept_contigs:null,expected_kept_bp:null});
+function documentData(){return{schema_version:8,dataset_id:PROJECT.dataset_id,exported_at:new Date().toISOString(),samples:PROJECT.samples.map(m=>{const s=settings.get(m.sample_id);return{sample_id:m.sample_id,fingerprint:m.fingerprint,eac_path:m.eac_path,eac_sha256:m.eac_sha256,retain_sample:s.retain_sample,min_length_bp:s.length,min_coverage:s.coverage,max_coverage:s.maxCoverage,labels:[...s.labels],excluded_seq_ids:[...s.excludedIds],mode:s.mode,reviewed:s.reviewed,reviewed_at:s.reviewed_at,note:s.note,expected_kept_contigs:s.expected_kept_contigs,expected_kept_bp:s.expected_kept_bp};})};}
 let serverReady=!PROJECT.review_server,serverRevision="",remoteConflict=false;
 let remoteSaveChain=Promise.resolve();
 function saveLocal(){
@@ -229,14 +256,16 @@ async function initializeProgress(){
 }
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveLocal,200);}
 function restoreDocument(d){
- if(![2,3,4,5,6,7].includes(d.schema_version)||(d.schema_version===7&&d.dataset_id!==PROJECT.dataset_id)||!Array.isArray(d.samples)||d.samples.length!==PROJECT.samples.length)throw new Error(t("wrongDocument"));
+ if(![2,3,4,5,6,7,8].includes(d.schema_version)||(d.schema_version>=7&&d.dataset_id!==PROJECT.dataset_id)||!Array.isArray(d.samples)||d.samples.length!==PROJECT.samples.length)throw new Error(t("wrongDocument"));
  const next=new Map();
  for(const entry of d.samples){
   const m=metadata.get(entry.sample_id);
   if(!m||next.has(entry.sample_id)||entry.fingerprint!==m.fingerprint)throw new Error(t("wrongSample")+entry.sample_id);
-  if(d.schema_version===7&&(entry.eac_path!==m.eac_path||entry.eac_sha256!==m.eac_sha256))throw new Error(t("wrongSample")+entry.sample_id);
+  if(d.schema_version>=7&&(entry.eac_path!==m.eac_path||entry.eac_sha256!==m.eac_sha256))throw new Error(t("wrongSample")+entry.sample_id);
+  const excluded=entry.excluded_seq_ids ?? [];
+  if((d.schema_version>=8&&!Array.isArray(entry.excluded_seq_ids))||!Array.isArray(excluded)||excluded.some(id=>typeof id!=="string"||!id)||new Set(excluded).size!==excluded.length)throw new Error(t("wrongFields")+entry.sample_id);
   const labels=normalizeLabels(entry.labels);
-  const s={retain_sample:d.schema_version>=5?entry.retain_sample:true,length:entry.min_length_bp,coverage:entry.min_coverage,maxCoverage:d.schema_version>=6?entry.max_coverage:null,labels,mode:entry.mode==="default"?"default":"manual",reviewed:entry.reviewed,reviewed_at:entry.reviewed_at,note:entry.note??"",expected_kept_contigs:entry.expected_kept_contigs,expected_kept_bp:entry.expected_kept_bp};
+  const s={retain_sample:d.schema_version>=5?entry.retain_sample:true,length:entry.min_length_bp,coverage:entry.min_coverage,maxCoverage:d.schema_version>=6?entry.max_coverage:null,labels,excludedIds:new Set(excluded),mode:entry.mode==="default"?"default":"manual",reviewed:entry.reviewed,reviewed_at:entry.reviewed_at,note:entry.note??"",expected_kept_contigs:entry.expected_kept_contigs,expected_kept_bp:entry.expected_kept_bp};
   if(s.maxCoverage!==null&&(!Number.isSafeInteger(s.maxCoverage)||s.maxCoverage<0))throw new Error(t("wrongThresholds")+entry.sample_id);
   if(typeof s.retain_sample!=="boolean"||typeof s.reviewed!=="boolean"||typeof s.note!=="string"||!Array.isArray(labels)||new Set(labels).size!==labels.length||!labels.every(k=>availableLabels.includes(k)))throw new Error(t("wrongFields")+entry.sample_id);
   if(s.length!==null&&(!Number.isSafeInteger(s.length)||s.length<0)||s.coverage!==null&&(!Number.isFinite(s.coverage)||s.coverage<0))throw new Error(t("wrongThresholds")+entry.sample_id);
@@ -266,6 +295,7 @@ function invalidate(){const s=state(),wasReviewed=s.reviewed;s.reviewed=false;s.
 let bulkBusy=false,bulkPending=null;
 function selectSample(name){
  if(bulkBusy)return;
+ selectedIds=new Set();cancelPointSelection();
  sample=name;loaded=false;pointLayers=null;rows=[];result=null;hoverPoints=[];drag=null;geometry=null;
  $("tooltip").hidden=true;$("sampleContent").hidden=true;$("loading").hidden=false;$("loading").textContent=t("loading");$("confirm").disabled=true;$("retainSample").disabled=true;$("markAll").disabled=true;
  $("chartTitle").textContent=name;$("currentStatus").textContent="";$("previous").disabled=PROJECT.samples[0].sample_id===name;error();listSamples();
@@ -329,6 +359,7 @@ function scheduleRefresh(){
  if(!refreshFrame)refreshFrame=requestAnimationFrame(()=>refresh());
 }
 function refresh(){
+ $("tooltip").hidden=true;
  cancelAnimationFrame(refreshFrame);
  refreshFrame=0;
  if(!loaded)return;
@@ -339,7 +370,7 @@ function refresh(){
  $("currentStatus").textContent=t(s.reviewed?"reviewed":"unreviewed")+"; "+(PROJECT.samples.findIndex(m=>m.sample_id===sample)+1)+" / "+PROJECT.samples.length;
  $("mode").textContent=!s.retain_sample?t("sampleExcluded"):ok?t(s.mode==="default"?"defaultMode":"manualMode"):t("invalid");
  $("reference").textContent=ref.n?translations[lang].reference(format(ref.n),compact(ref.median),compact(ref.min),compact(ref.max),compact(ref.cutoff)):t("noReference");
- renderLabels();
+ renderLabels();updateSelectionControls();
  $("groupSummary").replaceChildren();
  const meta=metadata.get(sample);
  renderGroup(t("allSequences"),rows.length,meta.bp,result?result.kept:null,result?result.keptBp:null,true);
@@ -369,7 +400,7 @@ for(const id of ["length","coverage","maxCoverage"])$(id).addEventListener("inpu
 $("maxCoverage").addEventListener("change",()=>{if(state().maxCoverage===null)$("maxCoverage").value=maxCoverageValue(state());});
 $("retainSample").addEventListener("change",()=>{if(!loaded)return;state().retain_sample=$("retainSample").checked;invalidate();refresh();});
 $("note").addEventListener("input",()=>{state().note=$("note").value;scheduleSave();});
-$("reset").addEventListener("click",()=>{Object.assign(state(),{length:500,coverage:ref.cutoff,maxCoverage:null,labels:[...availableLabels],mode:"default"});invalidate();$("length").value=500;$("coverage").value=ref.cutoff===null?"":ref.cutoff;$("maxCoverage").value=maxCoverageValue(state());refresh();});
+$("reset").addEventListener("click",()=>{Object.assign(state(),{length:500,coverage:ref.cutoff,maxCoverage:null,labels:[...availableLabels],excludedIds:new Set(),mode:"default"});selectedIds=new Set();invalidate();$("length").value=500;$("coverage").value=ref.cutoff===null?"":ref.cutoff;$("maxCoverage").value=maxCoverageValue(state());refresh();});
 $("search").addEventListener("input",listSamples);$("onlyPending").addEventListener("click",()=>{$("onlyPending").setAttribute("aria-pressed",String($("onlyPending").getAttribute("aria-pressed")!=="true"));listSamples();});
 $("previous").addEventListener("click",()=>{const i=PROJECT.samples.findIndex(m=>m.sample_id===sample);if(i>0)selectSample(PROJECT.samples[i-1].sample_id);});
 $("confirm").addEventListener("click",()=>{
@@ -380,11 +411,52 @@ $("confirm").addEventListener("click",()=>{
  if(next)selectSample(next.sample_id);else{listSamples();refresh();setStatus([...settings.values()].every(s=>s.reviewed)?"allDone":"lastSample");}
 });
 document.addEventListener("keydown",e=>{
- if(!["ArrowLeft","ArrowRight"].includes(e.key)||e.repeat||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey||bulkBusy||!loaded)return;
+ if(e.repeat||e.altKey||e.ctrlKey||e.metaKey||bulkBusy||!loaded)return;
  if(e.target instanceof Element&&e.target.closest("input,textarea,select,[contenteditable],[role=separator]"))return;
+ if(["Delete","Backspace"].includes(e.key)&&selectedIds.size){e.preventDefault();removeSelectedPoints();return;}
+ if(e.key==="Escape"){e.preventDefault();clearPointSelection();return;}
+ if(!["ArrowLeft","ArrowRight"].includes(e.key)||e.shiftKey)return;
  const button=$(e.key==="ArrowLeft"?"previous":"confirm");
  if(!button.disabled){e.preventDefault();button.click();}
 });
+function updateSelectionControls(){
+ const count=selectedIds.size,s=state();
+ $("selectionCount").textContent=translations[lang].selectedCount(format(count));
+ $("selectionCount").hidden=!count;
+ $("selectionHint").title=t("selectionHelp");
+ $("removeSelected").disabled=!loaded||![...selectedIds].some(id=>!s.excludedIds.has(id));
+ $("clearSelection").disabled=!count;
+ $("restoreManual").disabled=!s.excludedIds.size;
+ $("restoreManual").title=translations[lang].manualCount(format(s.excludedIds.size));
+}
+function cancelPointSelection(){selectionDrag=null;$("selectionBox").hidden=true;}
+function clearPointSelection(){selectedIds=new Set();cancelPointSelection();updateSelectionControls();draw();}
+function togglePointSelection(ids){
+ const next=new Set(selectedIds);
+ const deselect=ids.length>0&&ids.every(id=>next.has(id));
+ for(const id of ids){if(deselect)next.delete(id);else next.add(id);}
+ selectedIds=next;updateSelectionControls();draw();
+}
+function removeSelectedPoints(){
+ if(!loaded||!selectedIds.size)return;
+ const s=state();
+ s.excludedIds=new Set([...s.excludedIds,...selectedIds]);
+ selectedIds=new Set();s.mode="manual";invalidate();refresh();
+}
+$("removeSelected").addEventListener("click",removeSelectedPoints);
+$("clearSelection").addEventListener("click",clearPointSelection);
+$("restoreManual").addEventListener("click",()=>{
+ state().excludedIds=new Set();selectedIds=new Set();state().mode="manual";invalidate();refresh();
+});
+function drawSelectedPoints(ctx,g){
+ if(!selectedIds.size)return;
+ ctx.save();ctx.beginPath();ctx.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);ctx.clip();ctx.beginPath();
+ for(const point of hoverPoints)if(selectedIds.has(point.r.id)){
+  ctx.moveTo(point.x+4,point.y);ctx.arc(point.x,point.y,4,0,Math.PI*2);
+ }
+ ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.stroke();
+ ctx.strokeStyle="#515157";ctx.lineWidth=1;ctx.stroke();ctx.restore();
+}
 function readReviewPayload(meta){
  const tag=document.createElement("script");
  return new Promise((resolve,reject)=>{
@@ -399,6 +471,8 @@ function decodePayload(meta,payload){
  if(payload.sample_id!==meta.sample_id||payload.fingerprint!==meta.fingerprint)throw new Error(t("wrongData"));
  const rows=payload.rows.map(r=>({id:r[0],length:r[1],coverage:r[2],label:r[3]})),reference=C.reference(rows);
  if(rows.length!==meta.contigs||rows.reduce((n,r)=>n+r.length,0)!==meta.bp||reference.n!==meta.reference.n||reference.median!==meta.reference.cov_10kb)throw new Error(t("wrongStats"));
+ const saved=settings.get(meta.sample_id);
+ if(saved)saved.excludedIds=C.exclusions([...saved.excludedIds],rows.map(row=>row.id));
  return {rows,reference};
 }
 function markReviewed(s,evaluated){
@@ -487,7 +561,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     $("plotPercent").min=plotMinPercent;
     if(document.activeElement!==$("plotPercent"))$("plotPercent").value=effectivePercent;
 
-    holder.style.width=w+"px";document.querySelector(".plotbar").style.width=w+"px";
+    holder.style.width=w+"px";document.querySelector(".plotbar").style.width=w+"px";document.querySelector(".selection-tools").style.width=w+"px";
     if(holder.style.height!==targetHeight+"px")holder.style.height=targetHeight+"px";
     const h=holder.clientHeight,dpr=window.devicePixelRatio||1;
     if(canvas.width!==Math.round(w*dpr))canvas.width=Math.round(w*dpr);
@@ -502,7 +576,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
       const lo=Math.max(0,Math.log10(minL)-.12),hi=Math.max(lo+.5,Math.log10(maxL)+.12),yc=yT(Math.max(1,maxC))*1.07;
       geometry={...box,w,h,x:scale(lo,hi,box.left,box.right,Math.log10,v=>10**v),y:scale(0,yc,box.bottom,box.top,yT,yI)};
     }
-    const g=geometry;preparePointLayers(g,dpr,s);if(marginal)drawDistributions(ctx,g);ctx.font='12px -apple-system, sans-serif';ctx.strokeStyle="#ededee";ctx.lineWidth=1;ctx.fillStyle="#6e6e73";
+    const g=geometry;$("selectionCount").style.right=(w-g.right)+"px";preparePointLayers(g,dpr,s);if(marginal)drawDistributions(ctx,g);ctx.font='12px -apple-system, sans-serif';ctx.strokeStyle="#ededee";ctx.lineWidth=1;ctx.fillStyle="#6e6e73";
     const xTicks=[];
     for(let power=Math.floor(g.x.a);power<=Math.ceil(g.x.b);power++)for(const factor of [1,5]){const v=factor*10**power;if(Math.log10(v)>=g.x.a&&Math.log10(v)<=g.x.b)xTicks.push(v);}
     let last=-Infinity;const gap=w<480?68:54;
@@ -521,6 +595,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     if(s.maxCoverage!==null)ctx.fillRect(Math.max(g.left,lx),g.top,Math.max(0,g.right-Math.max(g.left,lx)),Math.max(0,Math.min(g.bottom,uy)-g.top));
     ctx.globalAlpha=1;
     drawPoints(ctx,g,s,lx,cy,uy);
+    drawSelectedPoints(ctx,g);
     ctx.globalAlpha=1;ctx.lineWidth=1.5;ctx.strokeStyle=thresholdColor;ctx.setLineDash([6,4]);
     if(lx>=g.left&&lx<=g.right){ctx.beginPath();ctx.moveTo(lx,marginal?8:g.top);ctx.lineTo(lx,g.bottom);ctx.stroke();}
     for(const y of [cy,uy])if(y!==null){ctx.beginPath();ctx.moveTo(g.left,y);ctx.lineTo(marginal?g.right+54:g.right,y);ctx.stroke();}
@@ -546,7 +621,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     const selectedLabels = new Set(!result ? availableLabels : settings.retain_sample ? settings.labels : []);
     const geometryKey = [g.w, g.h, dpr, g.x.a, g.x.b, g.y.b].join("/");
     const selectionKey = availableLabels.map(label => selectedLabels.has(label)).join(",");
-    if (pointLayers?.geometryKey === geometryKey && pointLayers.selectionKey === selectionKey) return;
+    if (pointLayers?.geometryKey === geometryKey && pointLayers.selectionKey === selectionKey && pointLayers.excludedIds === settings.excludedIds) return;
 
     let order = pointLayers?.order;
     if (!order) {
@@ -576,20 +651,27 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
         yBin: Math.max(0, Math.min(47, Math.floor((g.bottom - g.y.f(r.coverage)) / (g.bottom - g.top) * 48)))
       }));
     }
+    const colors = availableLabels.map((_, index) => labelColor(index));
+    // Fade colors before rasterization so overlapping removed points stay light.
+    const fadedColors = colors.map(color => "#" + [1, 3, 5].map(offset => {
+      const channel = parseInt(color.slice(offset, offset + 2), 16);
+      return Math.round(255 + (channel - 255) * .30).toString(16).padStart(2, "0");
+    }).join(""));
     for (let appearance = 0; appearance < layers.length; appearance++) {
       if (appearance === 0 && sameGeometry) continue;
       const context = layers[appearance].context;
       context.clearRect(0, 0, g.w, g.h);
+      context.globalAlpha = .55;
       for (const index of order) {
         const point = hoverPoints[index];
-        context.globalAlpha = appearance === 1 && selectedLabels.has(point.r.label) ? .55 : .35;
-        context.fillStyle = labelColor(point.label);
+        const highlighted = appearance === 1 && selectedLabels.has(point.r.label) && !settings.excludedIds?.has(point.r.id);
+        context.fillStyle = highlighted ? colors[point.label] : fadedColors[point.label];
         context.beginPath();
         context.arc(point.x, point.y, 2, 0, Math.PI * 2);
         context.fill();
       }
     }
-    pointLayers = {geometryKey, selectionKey, order, layers};
+    pointLayers = {geometryKey, selectionKey, order, layers, excludedIds: settings.excludedIds};
   }
   function drawPoints(ctx, g, settings, lx, cy, uy) {
     const left = Math.max(g.left, Math.min(g.right, lx));
@@ -654,30 +736,71 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     return choices[0][1]<=limit?choices[0][0]:null;
   }
   const eTouch=()=>window.matchMedia("(pointer:coarse)").matches;
-  canvas.addEventListener("pointerdown",e=>{const p=point(e),axis=nearLine(p);if(axis){drag=axis;canvas.setPointerCapture(e.pointerId);tip.hidden=true;e.preventDefault();}else showTooltip(p);});
+  function nearestPoint(p){
+    let best=null,distance=(eTouch()?24:10)**2;
+    for(let index=hoverPoints.length-1;index>=0;index--){
+      const item=hoverPoints[pointLayers?pointLayers.order[index]:index];
+      const dx=item.x-p.x,dy=item.y-p.y,d=dx*dx+dy*dy;
+      if(d<distance){best=item;distance=d;}
+    }
+    return best;
+  }
+  canvas.addEventListener("pointerdown",e=>{
+    if(e.button!==0)return;
+    canvas.focus({preventScroll:true});
+    const p=point(e),axis=e.shiftKey?null:nearLine(p),g=geometry;
+    if(axis){drag=axis;canvas.setPointerCapture(e.pointerId);tip.hidden=true;e.preventDefault();return;}
+    if(g&&p.x>=g.left&&p.x<=g.right&&p.y>=g.top&&p.y<=g.bottom){
+      selectionDrag={start:p,current:p,moved:false};
+      canvas.setPointerCapture(e.pointerId);tip.hidden=true;e.preventDefault();
+    }
+  });
   canvas.addEventListener("pointermove",e=>{
     const p=point(e);
     if(drag){
       const g=geometry,v=drag==="length"?Math.max(0,Math.round(g.x.i(Math.max(g.left,Math.min(g.right,p.x))))):Math.max(0,Math.round(g.y.i(Math.max(g.top,Math.min(g.bottom,p.y)))));
       const bounded=boundThreshold(drag,v);if(state()[drag]===bounded)return;state()[drag]=bounded;state().mode="manual";invalidate();$(drag).value=bounded;error();scheduleRefresh();return;
     }
+    if(selectionDrag){
+      const g=geometry,start=selectionDrag.start;
+      selectionDrag.current={x:Math.max(g.left,Math.min(g.right,p.x)),y:Math.max(g.top,Math.min(g.bottom,p.y))};
+      const current=selectionDrag.current;
+      selectionDrag.moved ||= Math.hypot(current.x-start.x,current.y-start.y)>4;
+      const box=$("selectionBox");box.hidden=!selectionDrag.moved;
+      Object.assign(box.style,{left:Math.min(start.x,current.x)+"px",top:Math.min(start.y,current.y)+"px",width:Math.abs(start.x-current.x)+"px",height:Math.abs(start.y-current.y)+"px"});
+      return;
+    }
     const axis=nearLine(p);canvas.style.cursor=axis==="length"?"ew-resize":axis?"ns-resize":"crosshair";showTooltip(p);
   });
-  function endDrag(){if(drag){drag=null;refresh();}}
-  canvas.addEventListener("pointerup",endDrag);canvas.addEventListener("pointercancel",endDrag);canvas.addEventListener("lostpointercapture",endDrag);
+  function finishPointer(e,cancelled=false){
+    if(drag){drag=null;refresh();return;}
+    if(!selectionDrag)return;
+    const selection=selectionDrag;cancelPointSelection();
+    if(cancelled)return;
+    const ids=[];
+    if(selection.moved){
+      const a=selection.start,b=selection.current;
+      const left=Math.min(a.x,b.x),right=Math.max(a.x,b.x),top=Math.min(a.y,b.y),bottom=Math.max(a.y,b.y);
+      for(const item of hoverPoints)if(item.x>=left&&item.x<=right&&item.y>=top&&item.y<=bottom)ids.push(item.r.id);
+    }else{
+      const item=nearestPoint(selection.current);
+      if(item)ids.push(item.r.id);
+      showTooltip(selection.current);
+    }
+    togglePointSelection(ids);
+  }
+  canvas.addEventListener("pointerup",e=>finishPointer(e));
+  canvas.addEventListener("pointercancel",e=>finishPointer(e,true));
+  canvas.addEventListener("lostpointercapture",e=>finishPointer(e,true));
   canvas.addEventListener("pointerleave",()=>{if(!drag)tip.hidden=true;});
   function showTooltip(p){
-    let best=null,distance=(eTouch()?24:10)**2;
-    for(const item of hoverPoints){
-      const dx=item.x-p.x,dy=item.y-p.y,d=dx*dx+dy*dy;
-      if(d<distance){best=item;distance=d;}
-    }
+    const best=nearestPoint(p);
     if(!best){tip.hidden=true;return;}
     const r=best.r,why=result?C.reasons(r,state()):null;
     tip.textContent=r.id+"\nlen: "+format(r.length)+" bp; cov: "+compact(r.coverage)+" ×; tag: "+tagName(r.label)+"\n"+(!why?t("pendingThresholds"):why.length?t("removed")+": "+why.map(reasonText).join("; "):t("retained")+": "+t("passes"));
     tip.hidden=false;tip.style.left=Math.max(0,Math.min(geometry.w-tip.offsetWidth-4,p.x+12))+"px";tip.style.top=Math.max(0,Math.min(geometry.h-tip.offsetHeight-4,p.y+12))+"px";
   }
-  new ResizeObserver(()=>{drag=null;draw();}).observe($("filteringModule"));
+  new ResizeObserver(()=>{drag=null;cancelPointSelection();draw();}).observe($("filteringModule"));
 
 translate();
 await initializeProgress();

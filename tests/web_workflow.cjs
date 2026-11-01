@@ -28,12 +28,56 @@ for (const sample of inputContext.samples) {
 
 // Mixed-label caches must preserve filtering, seeded order and threshold-drag reuse.
 const reviewSource = fs.readFileSync(path.join(root, "src/eukasmchecker/review.html"), "utf8");
+// Saving/restoring must retain manual IDs and accept existing schema 7 reviews.
+const savedMeta={sample_id:"sample_A",fingerprint:"fp",eac_path:"browser:a",eac_sha256:"hash"};
+const savedState={retain_sample:true,length:500,coverage:10,maxCoverage:null,labels:["eukaryota"],
+  excludedIds:new Set(["a"]),mode:"manual",reviewed:false,reviewed_at:null,note:"",expected_kept_contigs:null,expected_kept_bp:null};
+const savedContext={PROJECT:{dataset_id:"dataset",samples:[savedMeta]},settings:new Map([["sample_A",savedState]]),
+  metadata:new Map([["sample_A",savedMeta]]),availableLabels:["eukaryota","other","NA"],
+  normalizeLabels:labels=>labels,t:key=>key,valid:()=>true};
+vm.createContext(savedContext);
+vm.runInContext(reviewSource.slice(reviewSource.indexOf("function documentData()"),reviewSource.indexOf("let serverReady=")),savedContext);
+vm.runInContext(reviewSource.slice(reviewSource.indexOf("function restoreDocument("),reviewSource.indexOf("function listSamples(")),savedContext);
+const savedReview=savedContext.documentData();
+assert.equal(savedReview.schema_version,8);
+assert.deepEqual(Array.from(savedReview.samples[0].excluded_seq_ids),["a"]);
+savedContext.restoreDocument(savedReview);
+assert.deepEqual(Array.from(savedContext.settings.get("sample_A").excludedIds),["a"]);
+const legacyReview=JSON.parse(JSON.stringify(savedReview));legacyReview.schema_version=7;delete legacyReview.samples[0].excluded_seq_ids;
+savedContext.restoreDocument(legacyReview);
+assert.equal(savedContext.settings.get("sample_A").excludedIds.size,0);
+const invalidReview=JSON.parse(JSON.stringify(savedReview));invalidReview.samples[0].excluded_seq_ids=["a","a"];
+assert.throws(()=>savedContext.restoreDocument(invalidReview),/wrongFields/);
+
+// Click and repeated rectangles toggle only their target points.
+const selectionContext={selectedIds:new Set(),updateSelectionControls(){},draw(){}};
+vm.createContext(selectionContext);
+vm.runInContext(reviewSource.slice(reviewSource.indexOf("function togglePointSelection("),reviewSource.indexOf("function removeSelectedPoints(")),selectionContext);
+selectionContext.togglePointSelection(["a"]);
+assert.deepEqual(Array.from(selectionContext.selectedIds),["a"]);
+selectionContext.togglePointSelection(["a"]);
+assert.equal(selectionContext.selectedIds.size,0);
+selectionContext.togglePointSelection(["a","b"]);
+assert.equal(selectionContext.selectedIds.size,2);
+selectionContext.togglePointSelection(["a","b"]);
+assert.equal(selectionContext.selectedIds.size,0);
+selectionContext.togglePointSelection(["a"]);
+selectionContext.togglePointSelection(["a","b"]);
+assert.deepEqual(Array.from(selectionContext.selectedIds),["a","b"]);
+selectionContext.togglePointSelection(["c"]);
+selectionContext.togglePointSelection(["a","b"]);
+assert.deepEqual(Array.from(selectionContext.selectedIds),["c"]);
+selectionContext.togglePointSelection([]);
+assert.deepEqual(Array.from(selectionContext.selectedIds),["c"]);
+
 let rasterizedPoints = 0;
+const normalPalette = ["#1d1d1f", "#709487", "#96969e"];
+const fadedPalette = ["#bbbbbc", "#d4dfdb", "#e0e0e2"];
 const renderRows = [
-  {length: 499, coverage: 10, label: "NA"},
-  {length: 500, coverage: 10, label: "eukaryota"},
-  {length: 1000, coverage: 20, label: "other"},
-  {length: 2000, coverage: 30, label: "eukaryota"}
+  {id: "c", length: 499, coverage: 10, label: "NA"},
+  {id: "b", length: 500, coverage: 10, label: "eukaryota"},
+  {id: "a", length: 1000, coverage: 20, label: "other"},
+  {id: "d", length: 2000, coverage: 30, label: "eukaryota"}
 ];
 function mockCanvas() {
   const canvas = {points: []};
@@ -48,7 +92,7 @@ function mockCanvas() {
 }
 const renderContext = {
   pointLayers: null, hoverPoints: [], rows: renderRows,
-  availableLabels: ["eukaryota", "other", "NA"], labelColor: index => String(index),
+  availableLabels: ["eukaryota", "other", "NA"], labelColor: index => normalPalette[index],
   document: {createElement: mockCanvas}
 };
 vm.createContext(renderContext);
@@ -56,8 +100,8 @@ vm.runInContext(reviewSource.slice(reviewSource.indexOf("  function preparePoint
 const geometry = {w: 300, h: 200, left: 20, right: 280, top: 20, bottom: 180,
   x: {a: 2, b: 4, f: length => 20 + (Math.log10(length) - 2) / 2 * 260},
   y: {b: 5, f: coverage => 180 - Math.asinh(coverage) / 5 * 160}};
-for (const retain of [true, false]) for (const labels of [["eukaryota"], ["other", "NA"], ["eukaryota", "other", "NA"]]) {
-  const settings = {length: 500, coverage: 10, maxCoverage: 20, retain_sample: retain, labels};
+for (const retain of [true, false]) for (const labels of [["eukaryota"], ["other", "NA"], ["eukaryota", "other", "NA"]]) for (const excluded of [[], ["a", "b"]]) {
+  const settings = {length: 500, coverage: 10, maxCoverage: 20, retain_sample: retain, labels, excludedIds: new Set(excluded)};
   renderContext.result = EACCore.evaluate(renderRows, settings);
   renderContext.preparePointLayers(geometry, 1, settings);
   const cached = renderContext.pointLayers;
@@ -71,12 +115,16 @@ for (const retain of [true, false]) for (const labels of [["eukaryota"], ["other
       for (const point of canvas.points) {
         const index = renderContext.hoverPoints.findIndex(item => item.x === point.x && item.y === point.y);
         const inside = rectangles.filter(r => point.x >= r.x && point.x <= r.x + r.w && point.y >= r.y && point.y <= r.y + r.h).length % 2;
-        if (inside) shown[index].push(point.alpha);
+        if (inside) shown[index].push([point.color, point.alpha]);
       }
     }
   };
   renderContext.drawPoints(context, geometry, settings, geometry.x.f(500), geometry.y.f(10), geometry.y.f(20));
-  shown.forEach((alphas, index) => assert.deepEqual(alphas, [renderContext.result.annotated[index].keep ? .55 : .35]));
+  shown.forEach((appearances, index) => {
+    const label = renderContext.availableLabels.indexOf(renderRows[index].label);
+    const palette = renderContext.result.annotated[index].keep ? normalPalette : fadedPalette;
+    assert.deepEqual(appearances, [[palette[label], .55]]);
+  });
   const changedThresholds = {...settings, length: 800, coverage: 15, maxCoverage: 25};
   renderContext.result = EACCore.evaluate(renderRows, changedThresholds);
   renderContext.preparePointLayers(geometry, 1, changedThresholds);
@@ -94,9 +142,9 @@ renderContext.preparePointLayers(geometry, 1, allLabels);
 const firstOrder = Array.from(renderContext.pointLayers.order);
 assert.equal(new Set(firstOrder).size, overlapRows.length);
 const colors = renderContext.pointLayers.layers[1].canvas.points.map(point => point.color);
-assert.deepEqual(renderContext.pointLayers.layers[0].canvas.points.map(point => point.color), colors);
+assert.deepEqual(renderContext.pointLayers.layers[0].canvas.points.map(point => normalPalette[fadedPalette.indexOf(point.color)]), colors);
 assert(colors.filter((color, index) => index > 0 && color !== colors[index - 1]).length > 30);
-for (const color of ["0", "1", "2"]) assert.equal(colors.filter(value => value === color).length, 30);
+for (const color of normalPalette) assert.equal(colors.filter(value => value === color).length, 30);
 const fadedCanvas = renderContext.pointLayers.layers[0].canvas;
 const beforeSelection = rasterizedPoints;
 const eukOnly = {...allLabels, labels: ["eukaryota"]};
@@ -104,8 +152,19 @@ renderContext.result = EACCore.evaluate(overlapRows, eukOnly);
 renderContext.preparePointLayers(geometry, 1, eukOnly);
 assert.equal(renderContext.pointLayers.layers[0].canvas, fadedCanvas);
 assert.equal(rasterizedPoints - beforeSelection, overlapRows.length);
-assert.deepEqual(renderContext.pointLayers.layers[1].canvas.points.map(point => point.color), colors);
-for (const point of renderContext.pointLayers.layers[1].canvas.points) assert.equal(point.alpha, point.color === "0" ? .55 : .35);
+assert.deepEqual(renderContext.pointLayers.layers[1].canvas.points.map(point => point.color),
+  colors.map(color => color === normalPalette[0] ? color : fadedPalette[normalPalette.indexOf(color)]));
+for (const point of renderContext.pointLayers.layers[1].canvas.points) assert.equal(point.alpha, .55);
+// Dense removed clusters must not accumulate back to the dark retained color.
+function compositeOnWhite(points) {
+  return points.reduce((pixel, point) => pixel.map((channel, index) =>
+    channel * (1 - point.alpha) + parseInt(point.color.slice(1 + index * 2, 3 + index * 2), 16) * point.alpha), [255, 255, 255]);
+}
+const fadedPixel = compositeOnWhite(fadedCanvas.points);
+assert(fadedPixel.every(channel => channel >= 187));
+const eukPixel = compositeOnWhite(Array.from({length: 100}, () => ({color: normalPalette[0], alpha: .55})));
+const removedEukPixel = compositeOnWhite(Array.from({length: 100}, () => ({color: fadedPalette[0], alpha: .55})));
+assert(removedEukPixel.every((channel, index) => channel - eukPixel[index] > 150));
 renderContext.preparePointLayers({...geometry, w: 320}, 2, eukOnly);
 assert.deepEqual(Array.from(renderContext.pointLayers.order), firstOrder);
 renderContext.pointLayers = null;
@@ -137,12 +196,17 @@ console.log("Seeded mixed-label order, cache reuse and filtering appearance pass
     {name:"fractional",min:85,max:null,labels:["eukaryota","other","NA"],retain:true,count:1,bp:10001},
     {name:"upper",min:10,max:100,labels:["eukaryota","other","NA"],retain:true,count:2,bp:1435},
     {name:"labels",min:10,max:null,labels:["other"],retain:true,count:2,bp:1435},
-    {name:"excluded",min:null,max:null,labels:["eukaryota","other","NA"],retain:false,count:0,bp:0}
+    {name:"excluded",min:null,max:null,labels:["eukaryota","other","NA"],retain:false,count:0,bp:0},
+    {name:"manual",min:10,max:null,labels:["eukaryota","other","NA"],retain:true,excluded:["b"],count:2,bp:10936},
+    {name:"manual_batch",min:10,max:null,labels:["eukaryota","other","NA"],retain:true,excluded:["a","c","d"],count:1,bp:500},
+    {name:"manual_all",min:10,max:null,labels:["eukaryota","other","NA"],retain:true,excluded:["a","b","c","d"],count:0,bp:0}
   ];
+  let manualDecision;
   for(const item of cases){
     const decision={sample_id:"sample_A",fingerprint:prepared.meta.fingerprint,eac_path:prepared.meta.eac_path,
       eac_sha256:prepared.meta.eac_sha256,reviewed:true,retain_sample:item.retain,min_length_bp:500,min_coverage:item.min,
-      max_coverage:item.max,labels:item.labels,expected_kept_contigs:item.count,expected_kept_bp:item.bp};
+      max_coverage:item.max,labels:item.labels,excluded_seq_ids:item.excluded||[],expected_kept_contigs:item.count,expected_kept_bp:item.bp};
+    if(item.name==="manual")manualDecision=decision;
     const result=await EACData.apply(prepared.blob,original,decision,prepared.meta);
     fs.writeFileSync(path.join(out,item.name+".fasta"),Buffer.from(await result.fasta.arrayBuffer()));
     fs.writeFileSync(path.join(out,item.name+".tsv"),await result.table.text());
@@ -151,6 +215,25 @@ console.log("Seeded mixed-label order, cache reuse and filtering appearance pass
     await assert.rejects(()=>EACData.apply(prepared.blob,original,{...decision,reviewed:false},prepared.meta),/Confirm/);
     await assert.rejects(()=>EACData.apply(prepared.blob,original,{...decision,expected_kept_contigs:999},prepared.meta),/counts/);
   }
+  await assert.rejects(()=>EACData.apply(prepared.blob,original,{...manualDecision,excluded_seq_ids:["missing"]},prepared.meta),/Unknown manually excluded/);
+  await assert.rejects(()=>EACData.apply(prepared.blob,original,{...manualDecision,excluded_seq_ids:["b","b"]},prepared.meta),/Invalid manual/);
+  const workerMessages = [];
+  let workerHandler;
+  const workerContext = {EACCore, EACData, EACZip, sha256, Blob, File,
+    importScripts() {}, self: {
+      addEventListener(type, handler) {workerHandler=handler;},
+      postMessage(message) {workerMessages.push(message);}
+    }
+  };
+  vm.createContext(workerContext);
+  vm.runInContext(fs.readFileSync(path.join(root,"web/src/worker.js"),"utf8"),workerContext);
+  await workerHandler({data:{id:1,type:"prepare",samples:[sample],columns,projectName:"Manual removal test"}});
+  assert(!workerMessages.some(message=>message.type==="error"),JSON.stringify(workerMessages));
+  const webManifest=workerMessages.find(message=>message.type==="result").value;
+  await workerHandler({data:{id:2,type:"export",decisions:{schema_version:8,dataset_id:webManifest.dataset_id,samples:[manualDecision]}}});
+  assert(!workerMessages.some(message=>message.type==="error"),JSON.stringify(workerMessages));
+  const workerZip=workerMessages.find(message=>message.id===2&&message.type==="result").value;
+  fs.writeFileSync(path.join(out,"worker-manual.zip"),Buffer.from(await workerZip.arrayBuffer()));
   await assert.rejects(()=>EACData.prepare({...sample,coverage:new File([coverage+"b\t10\n"],"duplicate.tsv")},columns),/duplicate/);
   await assert.rejects(()=>EACData.prepare({...sample,coverage:new File([coverage.replace("b\t10\n","")],"missing.tsv")},columns),/same IDs/);
   await assert.rejects(()=>EACData.prepare({...sample,ecm:new File([ecm.replace("b\t500","b\t501")],"length.tsv")},columns),/length differs/);

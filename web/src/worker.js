@@ -55,13 +55,14 @@ self.addEventListener("message",async event=>{
       self.postMessage({id:message.id,type:"result",value:{sample_id:prepared.sample_id,fingerprint:prepared.fingerprint,rows:prepared.rows}});
     }else if(message.type==="export"){
       const document=message.decisions;
-      if(!manifest || document.schema_version!==7 || document.dataset_id!==manifest.dataset_id ||
+      if(!manifest || ![7,8].includes(document.schema_version) || document.dataset_id!==manifest.dataset_id ||
          document.samples.length!==samples.size || new Set(document.samples.map(row=>row.sample_id)).size!==samples.size)
         throw new Error("Decisions do not match this project.");
       const entries=[],summary=["sample_id\tretain_sample\tmin_length_bp\tmin_coverage\tmax_coverage\tlabels\tretained_sequences\tretained_bp\tnote\n"];
       const sources={};
       let index=0;
       for(const decision of document.samples){
+        if(document.schema_version===8&&!Array.isArray(decision.excluded_seq_ids))throw new Error("Missing manual exclusions.");
         const sample=samples.get(decision.sample_id);
         if(!sample)throw new Error("Unknown sample in decisions.");
         progress("filter",index,samples.size,decision.sample_id);
@@ -71,7 +72,7 @@ self.addEventListener("message",async event=>{
           EACData.validateDecision(decision,sample.meta);
           const prepared=await preparedData(sample);
           const rows=prepared.rows.map(row=>({id:row[0],length:row[1],coverage:row[2],label:row[3]}));
-          const state={retain_sample:decision.retain_sample,length:decision.min_length_bp,coverage:decision.min_coverage,maxCoverage:decision.max_coverage,labels:decision.labels};
+          const state={retain_sample:decision.retain_sample,length:decision.min_length_bp,coverage:decision.min_coverage,maxCoverage:decision.max_coverage,labels:decision.labels,excludedIds:EACCore.exclusions(decision.excluded_seq_ids ?? [],rows.map(row=>row.id))};
           const result=EACCore.evaluate(rows,state);
           if(result.kept!==decision.expected_kept_contigs||result.keptBp!==decision.expected_kept_bp)throw new Error("Reviewed example counts differ.");
           const table=["seq_id\tlength_bp\tcoverage\tecm_label\tfilter_status\tfilter_reason\n"];

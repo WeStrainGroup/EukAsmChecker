@@ -70,6 +70,8 @@ contig_4	499	NA
 
 ### 审阅
 
+点击可切换单点选择。拖框选中区域内的序列，区域内全部已选中时再次框选会取消该区域的选择。其他区域的选择会保留，再使用“移除选中”或 Delete 应用排除。“恢复手动移除”可让这些序列重新按阈值判断。手动移除会写入 decisions.json，并应用到 FASTA 和表格。
+
 可直接打开[交互示例](https://westraingroup.github.io/EukAsmChecker/?demo=1)，体验审阅和筛选。
 
 ```bash
@@ -108,7 +110,7 @@ contig_3	750	7.25	eukaryota	removed	low_coverage
 contig_4	499	0	NA	removed	short_length;low_coverage
 ```
 
-移除原因包括 short_length、low_coverage、high_coverage 和 excluded_label，多个原因以分号连接。排除整个样本时，FASTA 为空，所有序列的原因为 excluded_sample。
+移除原因包括 short_length、low_coverage、high_coverage、excluded_label 和 manual_exclusion，多个原因以分号连接。排除整个样本时，FASTA 为空，所有序列的原因为 excluded_sample。
 
 ## 筛选规则
 
@@ -122,6 +124,7 @@ contig_4	499	0	NA	removed	short_length;low_coverage
 | 最低 coverage | `round(max(参考中位数 / 25, 10))`。参考集合为原始序列中标记为 `eukaryota` 且长度 >10 kb 的序列；集合为空时需手动指定下限。 |
 | 最高 coverage | 原始最大值向上取整，默认不移除序列。 |
 | 纳入标签 | 默认全选，可保留任意非空标签组合。 |
+| 手动移除 | 初始为空，选中的序列 ID 会持续被排除，直至手动恢复。“恢复默认”也会清空手动移除。 |
 | 保留样本 | 默认开启；关闭后移除该样本全部序列。 |
 
 保留序列须同时满足最小长度、包含端点的 coverage 区间和所选标签。Coverage 使用输入表中的逐序列平均值；参考集合包含零 coverage，每条序列等权。阈值使用整数，半值向上取整；筛选与输出表保留原始 coverage 精度。例如 84.9343× 即使显示为 85×，仍低于 85× 的下限。

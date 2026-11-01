@@ -82,6 +82,40 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(rows[2]["coverage"],"100.5")
         self.assertEqual(list(output.parent.iterdir()),[output])
 
+    def test_manual_exclusions_and_restore(self):
+        self.document["schema_version"] = 8
+        d = self.document["samples"][0]
+        d.update(excluded_seq_ids=["a", "c"], expected_kept_contigs=1, expected_kept_bp=500)
+        output = self.apply("manual") / "sample_A"
+        self.assertEqual((output / "sample_A.fasta").read_bytes(), b">b description\n" + b"C" * 500 + b"\n")
+        rows = list(g.table(output / "sample_A.sequences.tsv"))
+        self.assertEqual(rows[0]["filter_reason"], "manual_exclusion")
+        self.assertEqual(rows[2]["filter_reason"], "short_length;manual_exclusion")
+        d.update(excluded_seq_ids=[], expected_kept_contigs=2, expected_kept_bp=10501)
+        restored = self.apply("restored") / "sample_A/sample_A.fasta"
+        self.assertEqual(restored.read_bytes(), b">a original header\r\n" + b"A" * 10001 + b"\r\n>b description\n" + b"C" * 500 + b"\n")
+
+    def test_invalid_manual_exclusions(self):
+        self.document["schema_version"] = 8
+        d = self.document["samples"][0]
+        for excluded in [None, "a", ["a", "a"], [1], [""]]:
+            with self.subTest(excluded=excluded):
+                d["excluded_seq_ids"] = excluded
+                with self.assertRaisesRegex(ValueError, "manual exclusions"):
+                    g.validate_decisions(self.manifest, self.document)
+        del d["excluded_seq_ids"]
+        with self.assertRaisesRegex(ValueError, "Missing manual"):
+            g.validate_decisions(self.manifest, self.document)
+        d["excluded_seq_ids"] = ["missing"]
+        with self.assertRaisesRegex(ValueError, "Unknown manually excluded"):
+            self.apply("unknown_manual")
+
+    def test_manual_exclusions_require_matching_review_counts(self):
+        self.document["schema_version"] = 8
+        self.document["samples"][0]["excluded_seq_ids"] = ["b"]
+        with self.assertRaisesRegex(ValueError, "Retained counts differ"):
+            self.apply("stale_manual_counts")
+
     def test_default_maximum_and_inclusive_bound(self):
         d=self.document["samples"][0]
         d.update(min_length_bp=0,min_coverage=0,expected_kept_contigs=3,expected_kept_bp=11000)

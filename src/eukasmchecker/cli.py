@@ -128,6 +128,8 @@ def reason(row, decision):
         reasons.append("high_coverage")
     if decision["labels"] != "all" and row[3] not in (decision["labels"] if isinstance(decision["labels"], list) else [decision["labels"]]):
         reasons.append("excluded_label")
+    if row[0] in decision.get("excluded_seq_ids", ()):
+        reasons.append("manual_exclusion")
     return ";".join(reasons) or "pass"
 
 
@@ -326,8 +328,8 @@ def render_review(manifest, destination):
 
 def validate_decisions(manifest, decisions, complete=True):
     version = decisions.get("schema_version")
-    require(version in (2, 3, 4, 5, 6, 7), "Unsupported decisions schema.")
-    if version == 7:
+    require(version in (2, 3, 4, 5, 6, 7, 8), "Unsupported decisions schema.")
+    if version >= 7:
         require(decisions.get("dataset_id") == manifest["dataset_id"], "Decisions belong to another dataset.")
     entries = decisions.get("samples")
     require(isinstance(entries, list), "Missing decisions.samples.")
@@ -341,7 +343,7 @@ def validate_decisions(manifest, decisions, complete=True):
     for meta in manifest["samples"]:
         d = result[meta["sample_id"]]
         require(d.get("fingerprint") == meta["fingerprint"], f"Input mismatch: {meta['sample_id']}")
-        if version == 7:
+        if version >= 7:
             require(d.get("eac_path") == meta["eac_path"] and d.get("eac_sha256") == meta["eac_sha256"],
                     f"Prepared sample reference mismatch: {meta['sample_id']}")
         require(isinstance(d.get("reviewed"), bool), "reviewed must be boolean.")
@@ -354,6 +356,12 @@ def validate_decisions(manifest, decisions, complete=True):
         require(isinstance(labels, list) and all(isinstance(k, str) for k in labels)
                 and len(labels) == len(set(labels)) and set(labels) <= available, "Invalid ECM label selection.")
         d["labels"] = labels
+        if version >= 8:
+            require("excluded_seq_ids" in d, "Missing manual exclusions.")
+        excluded = d.get("excluded_seq_ids", [])
+        require(isinstance(excluded, list) and all(isinstance(value, str) and value for value in excluded)
+                and len(excluded) == len(set(excluded)), "Invalid manual exclusions.")
+        d["excluded_seq_ids"] = excluded
         for field in ("min_length_bp", "min_coverage"):
             if d.get(field) is not None:
                 d[field] = number(d[field], field, field == "min_length_bp" or version >= 4)
@@ -524,6 +532,9 @@ def filter_sample(task):
     copy_input(obj["fasta"], fasta)
     require(sha(fasta) == obj["fasta_sha256"], f"Original FASTA changed: {name}")
     rows = obj["rows"]
+    excluded = set(decision.get("excluded_seq_ids", []))
+    require(excluded <= {row[0] for row in rows}, f"Unknown manually excluded sequence: {name}")
+    decision = dict(decision, excluded_seq_ids=excluded)
     reasons = [reason(row, decision) for row in rows]
     keep = {row[0] for row, why in zip(rows, reasons) if why == "pass"}
     require(len(keep) == decision["expected_kept_contigs"] and
@@ -605,7 +616,7 @@ def apply(args):
         staged_decisions = task / "decisions.json"
         copy_input(decisions_path, staged_decisions)
         document = json.loads(staged_decisions.read_text())
-        require(document.get("schema_version") == 7,
+        require(document.get("schema_version") in (7, 8),
                 "Legacy decisions need source references. Import them into a review of the same prepared samples, then Save decisions and retry.")
         entries = document.get("samples")
         require(isinstance(entries, list) and entries, "No sample decisions.")
