@@ -6,7 +6,7 @@ package:
 
 source:
   url: https://github.com/WeStrainGroup/EukAsmChecker/releases/download/{{ version }}/eukasmchecker-{{ version }}.tar.gz
-  sha256: c73c77c5cb058eca6f22c4f51df5ac88c913d941dcb8a39ad06a6bb956a1f22d
+  sha256: 10a3852fe2ed6deaa7a86a439dbd15b0e672f4dd390e6e2cc7412602d2b4944c
 
 build:
   number: 1
