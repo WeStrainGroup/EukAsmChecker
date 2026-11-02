@@ -70,6 +70,41 @@ assert.deepEqual(Array.from(selectionContext.selectedIds),["c"]);
 selectionContext.togglePointSelection([]);
 assert.deepEqual(Array.from(selectionContext.selectedIds),["c"]);
 
+// Remove/restore acts on the current selection and preserves outside exclusions.
+const actionState={excludedIds:new Set(["outside","a"]),reviewed:true};
+const actionControls=Object.fromEntries(["selectionCount","selectionHint","removeSelected","restoreSelected"].map(id=>[id,{addEventListener(){}}]));
+const actionContext={selectedIds:new Set(["a","b"]),loaded:true,lang:"en",format:String,
+  translations:{en:{selectionCounts:(n,m)=>`${n} selected · ${m} manually removed`}},
+  t:key=>key,$:id=>actionControls[id],state:()=>actionState,
+  invalidate(){actionState.reviewed=false;},refresh(){actionContext.updateSelectionControls();}};
+vm.createContext(actionContext);
+vm.runInContext(reviewSource.slice(reviewSource.indexOf("function updateSelectionControls("),reviewSource.indexOf("function cancelPointSelection(")),actionContext);
+vm.runInContext(reviewSource.slice(reviewSource.indexOf("function removeSelectedPoints("),reviewSource.indexOf("function drawSelectedPoints(")),actionContext);
+actionContext.updateSelectionControls();
+assert.equal(actionControls.selectionCount.textContent,"2 selected · 1 manually removed");
+assert.equal(actionControls.removeSelected.disabled,false);
+assert.equal(actionControls.restoreSelected.disabled,false);
+actionContext.removeSelectedPoints();
+assert.deepEqual(Array.from(actionContext.selectedIds),["a","b"]);
+assert.deepEqual(Array.from(actionState.excludedIds),["outside","a","b"]);
+assert.equal(actionControls.selectionCount.textContent,"2 selected · 2 manually removed");
+assert.equal(actionControls.removeSelected.disabled,true);
+assert.equal(actionState.reviewed,false);
+actionContext.selectedIds=new Set(["a"]);
+actionContext.restoreSelectedPoints();
+assert.deepEqual(Array.from(actionContext.selectedIds),["a"]);
+assert.deepEqual(Array.from(actionState.excludedIds),["outside","b"]);
+assert.equal(actionControls.selectionCount.textContent,"1 selected · 0 manually removed");
+assert.equal(actionControls.restoreSelected.disabled,true);
+actionState.reviewed=true;
+actionContext.restoreSelectedPoints();
+assert.equal(actionState.reviewed,true);
+actionContext.selectedIds=new Set();
+actionContext.updateSelectionControls();
+assert.equal(actionControls.selectionCount.textContent,"0 selected · 0 manually removed");
+assert.equal(actionControls.removeSelected.disabled,true);
+assert.equal(actionControls.restoreSelected.disabled,true);
+
 let rasterizedPoints = 0;
 const normalPalette = ["#1d1d1f", "#709487", "#96969e"];
 const fadedPalette = ["#bbbbbc", "#d4dfdb", "#e0e0e2"];
