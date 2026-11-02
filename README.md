@@ -13,9 +13,9 @@ Both web and command line versions are available to make EukAsmChecker accessibl
 1. Select uncompressed FASTA, coverage TSV and ECM TSV files. Multiple samples are supported.
 2. Check the sample-to-file assignments and select the column names.
 3. Review the plots and filters, then confirm each sample.
-4. Click **Save results** to download one ZIP containing filtered FASTA, sequence tables, a project summary and decisions.json. Examples contain sequence statistics and export tables and decisions.
+4. Click Save results to download one ZIP containing filtered FASTA, sequence tables, a project summary and decisions.json. Examples contain sequence statistics and export tables and decisions.
 
-Refreshing the web page starts a new session. Each visit to Example starts from the defaults. Save results before refreshing or closing the page. To resume your own saved review, select the same input files and use **Import review (.json)** to load decisions.json from the result archive. Column settings apply to every sample.
+Refreshing the web page starts a new session. Each visit to Example starts from the defaults. Save results before refreshing or closing the page. To resume your own saved review, select the same input files and use Import review (.json) to load decisions.json from the result archive. Column settings apply to every sample.
 
 ## Command-line version
 
@@ -74,8 +74,6 @@ contig_4	499	NA
 ### Review
 
 Try the review interface with the [interactive example](https://westraingroup.github.io/EukAsmChecker/?demo=1).
-
-Click a point to toggle its selection. Drag a rectangle to select its sequences, or to deselect them when the whole region is already selected. Other selections are preserved. Use **Remove selected** or Delete to apply the exclusions. **Restore selected** clears manual exclusions for the selected sequences. Length, coverage and label filters still apply. Both actions clear the selection. To restore removed sequences, select them again and click **Restore selected**. The counter shows the current selection size and the total number of manually removed sequences in the sample. Click again, repeat a fully selected rectangle, or press Escape to deselect. Manual removals are saved in decisions.json and applied to FASTA and tables.
 
 ```bash
 eukasmchecker review project/ --threads 8
