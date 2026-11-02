@@ -120,13 +120,13 @@ The web and command-line versions use the same rules.
 Scatter points use a reproducible random drawing order across labels (seed 6311).
 
 | Setting | Default and behavior |
-|---|---|
-| Minimum length | 500 bp. |
-| Minimum coverage | `round(max(reference median / 25, 10))`. The reference set is original sequences labelled `eukaryota` with length >10 kb. Set a minimum manually if this set is empty. |
-| Maximum coverage | The original maximum, rounded upward; no sequences are removed by default. |
-| Included labels | All labels are selected initially; any nonempty subset can be retained. |
-| Manual removals | None initially. Selected sequence IDs remain excluded until restored. Reset defaults also clears manual removals. |
-| Retain sample | On by default. Turning it off removes every sequence in that sample. |
+|:---|:---|
+| Minimum&nbsp;length | 500 bp. |
+| Minimum&nbsp;coverage | `round(max(reference median / 25, 10))`. The reference set is original sequences labelled `eukaryota` with length >10 kb. Set a minimum manually if this set is empty. |
+| Maximum&nbsp;coverage | The original maximum, rounded upward; no sequences are removed by default. |
+| Included&nbsp;labels | All labels are selected initially; any nonempty subset can be retained. |
+| Manual&nbsp;removals | None initially. Selected sequence IDs remain excluded until restored. Reset defaults also clears manual removals. |
+| Retain&nbsp;sample | On by default. Turning it off removes every sequence in that sample. |
 
 Retention uses the length minimum, both inclusive coverage bounds, selected labels and saved manual removals. Coverage is the per-sequence mean from the input table. Reference sequences receive equal weight, including zero coverage. Thresholds are integers, with half values rounded upward; filtering and output tables preserve original coverage precision. For example, 84.9343× is below an 85× minimum even when displayed as 85×.
 
