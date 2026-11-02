@@ -87,8 +87,8 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 @container(max-width:534px){.controls{grid-template-columns:repeat(2,minmax(0,1fr))}.resetline{max-width:110px}.plotbar{padding-left:0}}
 .selection-tools{display:flex;justify-content:flex-end;margin-left:auto;max-width:100%;font-size:11px}
 .selection-group{display:grid;gap:4px;max-width:100%}
-.selection-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;line-height:18px}
-.selection-actions{display:flex;gap:6px;flex-wrap:wrap}
+.selection-heading{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:0 12px;line-height:18px;text-align:right}
+.selection-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}
 .selection-tools button{font-size:11px;padding:4px 8px;min-height:27px}
 #selectionHint{color:#6e6e73}
 #selectionCount{color:#6e6e73;white-space:nowrap}
@@ -101,7 +101,7 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 <details class="module" id="filteringModule" open><summary data-i18n="filteringTitle">Filtering</summary>
 <div class="filtering-layout"><div class="controls"><div class="threshold-control"><label for="length" data-i18n="minLength">Minimum length (bp)</label><input id="length" type="number" min="0" step="1"><input id="lengthRange" type="range" min="0" max="1000"></div><div class="threshold-control"><div class="coverage-heading"><label id="coverageHeading" for="coverage" data-i18n="minCoverage" tabindex="0" aria-describedby="reference">Minimum coverage (×)</label><div id="reference" role="tooltip" hidden></div></div><input id="coverage" type="number" min="0" step="1"><input id="coverageRange" type="range" min="0" max="1000"></div><div class="threshold-control"><label for="maxCoverage" data-i18n="maxCoverage">Maximum coverage (×)</label><input id="maxCoverage" type="number" min="0" step="1"><input id="maxCoverageRange" type="range" min="0" max="1000"></div><div class="label-control"><span class="control-label" id="labelTitle" data-i18n="labels">EukContigMiner labels</span><div id="labels" role="group" aria-labelledby="labelTitle"></div></div><div class="resetline"><span id="mode"></span><button id="reset" type="button" data-i18n="reset">Reset defaults</button></div><div class="distribution-control"><label for="distributionMode" data-i18n="distributionMode">Distributions</label><select id="distributionMode"><option value="filter" data-i18n="distributionFilter">filtering</option><option value="label" data-i18n="distributionLabels">all labels</option><option value="euk-other" selected data-i18n="distributionEukOther">euk + other</option></select></div><div class="plot-size-control"><label for="plotPercent" data-i18n="plotSizeLabel">Plot size (%)</label><input id="plotPercent" type="number" min="50" max="100" step="1" value="100"></div></div>
 <div class="filtering-plot"><div class="plotbar"><div class="legend" id="legend"></div>
-<div class="selection-tools"><div class="selection-group"><div class="selection-heading"><span id="selectionHint" data-i18n="selectPoints">Click or drag to select</span><span id="selectionCount" aria-live="polite"></span></div><div class="selection-actions"><button id="removeSelected" type="button" disabled data-i18n="removeSelected">Remove selected</button><button id="restoreSelected" type="button" disabled data-i18n="restoreSelected">Restore selected</button></div></div></div></div>
+<div class="selection-tools"><div class="selection-group"><div class="selection-heading"><span id="selectionHint" data-i18n="selectPoints">Click or drag to manually select</span><span id="selectionCount" aria-live="polite"></span></div><div class="selection-actions"><button id="removeSelected" type="button" disabled data-i18n="removeSelected">Remove selected</button><button id="restoreSelected" type="button" disabled data-i18n="restoreSelected">Restore selected</button></div></div></div></div>
 <div id="plot"><canvas id="canvas" role="img" tabindex="0"></canvas><div id="selectionBox" hidden></div><div id="tooltip" class="tooltip" role="tooltip" hidden></div></div>
 </div></div>
 </details>
@@ -175,15 +175,15 @@ reference:(n,mn,lo,hi,cut)=>"参考集合包含 "+n+" 条标签为 euk 且长度
 }};
 Object.assign(translations.en,{
  removeSelected:"Remove selected",restoreSelected:"Restore selected",
- selectPoints:"Click or drag to select",selectionCounts:(n,m)=>n+" selected · "+m+" manually removed",selectionCountHelp:"Manually removed counts only the selected sequences.",
+ selectPoints:"Click or drag to manually select",selectionCounts:(n,m)=>n+" selected · "+m+" removed",selectionCountHelp:"Removed counts manually excluded sequences in this sample.",
  selectionHelp:"Click a point to toggle selection. Drag selects an area, or deselects it when all its points are selected. Delete removes selected sequences. Escape clears the selection.",
- manual_exclusion:"manually removed",ruleSelection:"Click toggles a point. Drag selects a region, or deselects a fully selected region. Remove selected applies exclusions. Restore selected clears exclusions for the selected points. Length, coverage and label filters still apply."
+ manual_exclusion:"manually removed",ruleSelection:"Click toggles a point. Drag selects a region, or deselects a fully selected region. Remove selected applies exclusions. Restore selected clears exclusions for the selected points. Both actions clear the selection. Length, coverage and label filters still apply."
 });
 Object.assign(translations.zh,{
  removeSelected:"移除选中",restoreSelected:"恢复选中",
- selectPoints:"点击或拖框选择",selectionCounts:(n,m)=>"选中 "+n+" 条 · 其中手动移除 "+m+" 条",selectionCountHelp:"手动移除数量仅统计当前选中的序列。",
+ selectPoints:"点击或拖框手动选择",selectionCounts:(n,m)=>"选中 "+n+" 条 · 移除 "+m+" 条",selectionCountHelp:"移除数量为当前样本被手动排除的序列总数。",
  selectionHelp:"点击切换单点选择。框选区域，若区域内全部已选中则取消选择。Delete 移除选中序列，Esc 清空选择。",
- manual_exclusion:"手动移除",ruleSelection:"点击切换单点选择。框选区域，全部已选中时再次框选会取消选择。“移除选中”应用排除，“恢复选中”撤销所选点的手动排除，长度、coverage 和标签筛选仍然生效。"
+ manual_exclusion:"手动移除",ruleSelection:"点击切换单点选择。框选区域，全部已选中时再次框选会取消选择。“移除选中”应用排除，“恢复选中”撤销所选点的手动排除。操作后取消选择，长度、coverage 和标签筛选仍然生效。"
 });
 let lang="en";
 try{lang=localStorage.getItem("genome-review-language")==="zh"?"zh":"en";}catch(e){}
@@ -422,12 +422,12 @@ document.addEventListener("keydown",e=>{
 });
 function updateSelectionControls(){
  const count=selectedIds.size,s=state();
- const removed=[...selectedIds].filter(id=>s.excludedIds.has(id)).length;
- $("selectionCount").textContent=translations[lang].selectionCounts(format(count),format(removed));
+ const selectedRemoved=[...selectedIds].filter(id=>s.excludedIds.has(id)).length;
+ $("selectionCount").textContent=translations[lang].selectionCounts(format(count),format(s.excludedIds.size));
  $("selectionCount").title=t("selectionCountHelp");
  $("selectionHint").title=t("selectionHelp");
- $("removeSelected").disabled=!loaded||count===removed;
- $("restoreSelected").disabled=!loaded||!removed;
+ $("removeSelected").disabled=!loaded||count===selectedRemoved;
+ $("restoreSelected").disabled=!loaded||!selectedRemoved;
 }
 function cancelPointSelection(){selectionDrag=null;$("selectionBox").hidden=true;}
 function clearPointSelection(){selectedIds=new Set();cancelPointSelection();updateSelectionControls();draw();}
@@ -441,13 +441,13 @@ function removeSelectedPoints(){
  const s=state();
  if(!loaded||![...selectedIds].some(id=>!s.excludedIds.has(id)))return;
  s.excludedIds=new Set([...s.excludedIds,...selectedIds]);
- s.mode="manual";invalidate();refresh();
+ selectedIds=new Set();s.mode="manual";invalidate();refresh();
 }
 function restoreSelectedPoints(){
  const s=state();
  if(!loaded||![...selectedIds].some(id=>s.excludedIds.has(id)))return;
  s.excludedIds=new Set([...s.excludedIds].filter(id=>!selectedIds.has(id)));
- s.mode="manual";invalidate();refresh();
+ selectedIds=new Set();s.mode="manual";invalidate();refresh();
 }
 $("removeSelected").addEventListener("click",removeSelectedPoints);
 $("restoreSelected").addEventListener("click",restoreSelectedPoints);

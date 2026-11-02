@@ -75,7 +75,7 @@ contig_4	499	NA
 
 Try the review interface with the [interactive example](https://westraingroup.github.io/EukAsmChecker/?demo=1).
 
-Click a point to toggle its selection. Drag a rectangle to select its sequences, or to deselect them when the whole region is already selected. Other selections are preserved. Use **Remove selected** or Delete to apply the exclusions. **Restore selected** clears manual exclusions for the selected sequences. Length, coverage and label filters still apply. Both actions keep the selection so you can inspect or reverse the change. The counter shows the selected total and how many of those selected sequences are manually removed. Click again, repeat a fully selected rectangle, or press Escape to deselect. Manual removals are saved in decisions.json and applied to FASTA and tables.
+Click a point to toggle its selection. Drag a rectangle to select its sequences, or to deselect them when the whole region is already selected. Other selections are preserved. Use **Remove selected** or Delete to apply the exclusions. **Restore selected** clears manual exclusions for the selected sequences. Length, coverage and label filters still apply. Both actions clear the selection. To restore removed sequences, select them again and click **Restore selected**. The counter shows the current selection size and the total number of manually removed sequences in the sample. Click again, repeat a fully selected rectangle, or press Escape to deselect. Manual removals are saved in decisions.json and applied to FASTA and tables.
 
 ```bash
 eukasmchecker review project/ --threads 8
