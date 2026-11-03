@@ -174,11 +174,13 @@ const C={
    if(!rule||!Number.isSafeInteger(rule.id)||rule.id<1||ids.has(rule.id)||typeof rule.enabled!=="boolean")throw new Error("Invalid advanced rule ID or state.");
    ids.add(rule.id);
    if(!Array.isArray(rule.labels)||!rule.labels.length||new Set(rule.labels).size!==rule.labels.length||rule.labels.some(label=>typeof label!=="string"||!label||(available&&!available.includes(label))))throw new Error("Invalid advanced rule labels.");
+   const conditions={};
    for(const field of ["length","coverage"]){
     const condition=rule[field];
     if(!condition||!["any",">",">=","<","<="].includes(condition.operator)||!Number.isSafeInteger(condition.value)||condition.value<0)throw new Error("Invalid advanced rule condition.");
+    conditions[field]=condition.operator==="any"?{operator:">=",value:0}:{...condition};
    }
-   return {id:rule.id,enabled:rule.enabled,labels:[...rule.labels],length:{...rule.length},coverage:{...rule.coverage}};
+   return {id:rule.id,enabled:rule.enabled,labels:[...rule.labels],...conditions};
   });
  },
  condition(value, condition){
@@ -252,7 +254,7 @@ Object.assign(translations.zh,{
 Object.assign(translations.en,{
  advancedTitle:"Advanced rules",addAdvanced:"Add exclusion rule",newAdvanced:"New exclusion rule",editAdvanced:"Edit exclusion rule",
  closeAdvanced:"Close",cancelAdvanced:"Cancel",saveAdvanced:"Save rule",advancedHelp:"Remove sequences matching all conditions.",
- advancedLength:"Length (bp)",advancedCoverage:"Coverage (×)",advancedLabels:"Labels",advancedAny:"Any",advancedEdit:"Edit",advancedDelete:"Delete",advancedOff:"Off",
+ advancedLength:"Length (bp)",advancedCoverage:"Coverage (×)",advancedLabels:"Labels",advancedEdit:"Edit",advancedDelete:"Delete",advancedOff:"Off",
  advancedSelectLabel:"Select at least one label.",advancedSpecify:"Choose a label subset, length condition or coverage condition.",advancedInvalid:"Invalid advanced rule.",
  advancedMatches:n=>n+" matched",advancedReason:id=>"advanced rule "+id,
  ruleAdvanced:"Advanced rules apply to this sample. Conditions use AND within each rule and OR between rules. Reset defaults clears the rules."
@@ -260,7 +262,7 @@ Object.assign(translations.en,{
 Object.assign(translations.zh,{
  advancedTitle:"高级规则",addAdvanced:"添加排除规则",newAdvanced:"新增排除规则",editAdvanced:"编辑排除规则",
  closeAdvanced:"关闭",cancelAdvanced:"取消",saveAdvanced:"保存规则",advancedHelp:"删除同时满足全部条件的序列。",
- advancedLength:"长度（bp）",advancedCoverage:"Coverage（×）",advancedLabels:"标签",advancedAny:"不限",advancedEdit:"编辑",advancedDelete:"删除",advancedOff:"已停用",
+ advancedLength:"长度（bp）",advancedCoverage:"Coverage（×）",advancedLabels:"标签",advancedEdit:"编辑",advancedDelete:"删除",advancedOff:"已停用",
  advancedSelectLabel:"请至少选择一个标签。",advancedSpecify:"请选择标签子集，或设置长度、coverage 条件。",advancedInvalid:"高级规则无效。",
  advancedMatches:n=>"命中 "+n+" 条",advancedReason:id=>"高级规则 "+id,
  ruleAdvanced:"高级规则作用于当前样本。同一规则内的条件须同时满足，多条规则命中任意一条即可删除。恢复默认会清空规则。"
@@ -443,7 +445,7 @@ function advancedSummary(rule){
  const parts=[];
  for(const field of ["length","coverage"]){
   const condition=rule[field];
-  if(condition.operator==="any")continue;
+  if(condition.operator==="any"||(condition.operator===">="&&condition.value===0))continue;
   const operator={">=":"≥","<=":"≤"}[condition.operator]||condition.operator;
   parts.push(format(condition.value)+(field==="length"?" bp":"×"));
   parts[parts.length-1]=operator+" "+parts[parts.length-1];
@@ -480,24 +482,23 @@ function renderAdvancedLabels(){
 }
 function openAdvanced(rule=null){
  advancedSample=sample;
- advancedDraft=rule?JSON.parse(JSON.stringify(rule)):{id:null,enabled:true,labels:[...availableLabels],length:{operator:"any",value:5000},coverage:{operator:"any",value:10}};
+ advancedDraft=rule?JSON.parse(JSON.stringify(rule)):{id:null,enabled:true,labels:[...availableLabels],length:{operator:">=",value:0},coverage:{operator:">=",value:0}};
  $("advancedDialogTitle").textContent=t(rule?"editAdvanced":"newAdvanced");$("advancedError").hidden=true;
  renderAdvancedLabels();
  for(const field of ["Length","Coverage"]){
   const condition=advancedDraft[field.toLowerCase()],select=$("advanced"+field+"Operator"),input=$("advanced"+field+"Value");select.replaceChildren();
-  for(const operator of ["any",">",">=","<","<="]){const option=document.createElement("option");option.value=operator;option.textContent=operator==="any"?t("advancedAny"):({">=":"≥","<=":"≤"}[operator]||operator);select.append(option);}
-  select.value=condition.operator;input.value=condition.value;input.disabled=condition.operator==="any";
+  for(const operator of [">",">=","<","<="]){const option=document.createElement("option");option.value=operator;option.textContent={">=":"≥","<=":"≤"}[operator]||operator;select.append(option);}
+  select.value=condition.operator;input.value=condition.value;
  }
  $("advancedDialog").showModal();
 }
-for(const field of ["Length","Coverage"])$("advanced"+field+"Operator").addEventListener("change",()=>{$("advanced"+field+"Value").disabled=$("advanced"+field+"Operator").value==="any";});
 $("advancedForm").addEventListener("submit",event=>{
  event.preventDefault();
  if(!$("advancedForm").reportValidity()||sample!==advancedSample)return;
  for(const field of ["Length","Coverage"])advancedDraft[field.toLowerCase()]={operator:$("advanced"+field+"Operator").value,value:Number($("advanced"+field+"Value").value)};
  let message="";
  if(!advancedDraft.labels.length)message=t("advancedSelectLabel");
- else if(advancedDraft.labels.length===availableLabels.length&&advancedDraft.length.operator==="any"&&advancedDraft.coverage.operator==="any")message=t("advancedSpecify");
+ else if(advancedDraft.labels.length===availableLabels.length&&["length","coverage"].every(field=>advancedDraft[field].operator===">="&&advancedDraft[field].value===0))message=t("advancedSpecify");
  if(message){$("advancedError").textContent=message;$("advancedError").hidden=false;return;}
  const rules=state().advancedRules;
  const nextId=rules.reduce((maximum,rule)=>Math.max(maximum,rule.id),0)+1;
@@ -607,7 +608,7 @@ function drawSelectedPoints(ctx,g){
  if(!selectedIds.size)return;
  ctx.save();ctx.beginPath();ctx.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);ctx.clip();ctx.beginPath();
  for(const point of hoverPoints)if(selectedIds.has(point.r.id)){
-  const radius=2*pointPercent/100+2;
+  const radius=pointBaseRadius*pointPercent/100+2;
   ctx.moveTo(point.x+radius,point.y);ctx.arc(point.x,point.y,radius,0,Math.PI*2);
  }
  ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.stroke();
@@ -685,7 +686,8 @@ splitter.addEventListener("pointerup",finishResize);splitter.addEventListener("p
 splitter.addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight"].includes(e.key)){e.preventDefault();desiredSidebar=resizeSidebar(Number(splitter.getAttribute("aria-valuenow"))+(e.key==="ArrowLeft"?-20:20));try{localStorage.setItem("genome-review-sidebar",splitter.getAttribute("aria-valuenow"));}catch(e){}}});
 window.addEventListener("resize",()=>resizeSidebar(desiredSidebar));
 $("filteringModule").addEventListener("toggle",()=>{drag=null;$("tooltip").hidden=true;if($("filteringModule").open)draw();});
-const pointPercentKey="genome-review-point-percent";
+const pointBaseRadius=2.5;
+const pointPercentKey="genome-review-point-percent-scale125";
 let pointPercent=100;
 try{
  const saved=Number(localStorage.getItem(pointPercentKey));
@@ -839,7 +841,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
         const highlighted = appearance === 1 && selectedLabels.has(point.r.label) && !settings.excludedIds?.has(point.r.id) && !(settings.advancedRules||[]).some(rule=>rule.enabled&&C.ruleMatches(point.r,rule));
         context.fillStyle = highlighted ? colors[point.label] : fadedColors[point.label];
         context.beginPath();
-        context.arc(point.x, point.y, 2 * pointPercent / 100, 0, Math.PI * 2);
+        context.arc(point.x, point.y, pointBaseRadius * pointPercent / 100, 0, Math.PI * 2);
         context.fill();
       }
     }

@@ -139,6 +139,8 @@ def validate_advanced_rules(rules, available):
             require(type(value) in (int, float) and 0 <= value <= 2**53 - 1 and int(value) == value,
                     "Invalid advanced rule threshold.")
             condition["value"] = int(value)
+            if condition["operator"] == "any":
+                condition.update(operator=">=", value=0)
     return rules
 
 

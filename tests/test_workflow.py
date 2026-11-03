@@ -150,6 +150,8 @@ class WorkflowTests(unittest.TestCase):
         validated = g.validate_advanced_rules([numeric_rule], {"other"})
         self.assertIs(type(validated[0]["id"]), int)
         self.assertIs(type(validated[0]["length"]["value"]), int)
+        self.assertEqual(validated[0]["coverage"], dict(operator=">=", value=0))
+        self.assertTrue(g.rule_matches(["zero", 501, 0, "other"], validated[0]))
         rule["length"]["operator"] = "any"
         rule["coverage"] = dict(operator=">", value=10)
         self.assertTrue(g.rule_matches(row, rule))

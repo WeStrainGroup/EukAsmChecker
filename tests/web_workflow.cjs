@@ -42,6 +42,9 @@ for(const invalid of [null,"rules",[null],[{...advancedRule,id:true}],[advancedR
  [{...advancedRule,coverage:{operator:">",value:10.5}}],[{...advancedRule,length:{operator:"=",value:500}}]]){
  assert.throws(()=>EACCore.rules(invalid,ruleLabels),/advanced/);
 }
+const legacyRule=EACCore.rules([advancedRule],ruleLabels)[0];
+assert.deepEqual(legacyRule.coverage,{operator:">=",value:0});
+assert.equal(EACCore.ruleMatches({label:"other",length:501,coverage:0},legacyRule),true);
 const savedMeta={sample_id:"sample_A",fingerprint:"fp",eac_path:"browser:a",eac_sha256:"hash"};
 const savedState={retain_sample:true,length:500,coverage:10,maxCoverage:null,labels:["eukaryota"],
   excludedIds:new Set(["a"]),advancedRules:[advancedRule],mode:"manual",reviewed:false,reviewed_at:null,note:"",expected_kept_contigs:null,expected_kept_bp:null};
@@ -141,7 +144,7 @@ function mockCanvas() {
   return canvas;
 }
 const renderContext = {
-  C:EACCore,pointPercent:100,pointLayers: null, hoverPoints: [], rows: renderRows,
+  C:EACCore,pointBaseRadius:2.5,pointPercent:100,pointLayers: null, hoverPoints: [], rows: renderRows,
   availableLabels: ["eukaryota", "other", "NA"], labelColor: index => normalPalette[index],
   document: {createElement: mockCanvas}
 };
@@ -197,7 +200,7 @@ assert.equal(rasterizedPoints,afterRulePaint);
 // Point size changes both appearances without changing point order or filter results.
 const orderBeforeSize=Array.from(renderContext.pointLayers.order);
 const resultBeforeSize=JSON.stringify(renderContext.result);
-for(const [percent,radius] of [[200,4],[50,1]]){
+for(const [percent,radius] of [[200,5],[50,1.25]]){
  renderContext.pointPercent=percent;
  renderContext.preparePointLayers(geometry,1,withRules);
  assert(renderContext.pointLayers.layers.every(layer=>layer.canvas.points.every(point=>point.radius===radius)));
