@@ -1,4 +1,4 @@
-{% set version = "1.1" %}
+{% set version = "1.2" %}
 
 package:
   name: eukasmchecker
@@ -6,10 +6,10 @@ package:
 
 source:
   url: https://github.com/WeStrainGroup/EukAsmChecker/releases/download/{{ version }}/eukasmchecker-{{ version }}.tar.gz
-  sha256: ffbc9d2b6bfefcec2d5e2953c4564dc4eeb96026f905ce58d21d45a637ce519c
+  sha256: 6d2f94248dc7892bcfa8e7529ec49750acdc134330f36ebe6dd162a225432185
 
 build:
-  number: 3
+  number: 0
   noarch: python
   script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -v
   entry_points:

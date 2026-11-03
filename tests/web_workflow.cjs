@@ -29,23 +29,38 @@ for (const sample of inputContext.samples) {
 // Mixed-label caches must preserve filtering, seeded order and threshold-drag reuse.
 const reviewSource = fs.readFileSync(path.join(root, "src/eukasmchecker/review.html"), "utf8");
 // Saving/restoring must retain manual IDs and accept existing schema 7 reviews.
+const advancedRule={id:1,enabled:true,labels:["other"],length:{operator:">",value:500},coverage:{operator:"any",value:0}};
+const ruleLabels=["eukaryota","other","NA"];
+assert.equal(EACCore.ruleMatches({label:"other",length:500,coverage:20},advancedRule),false);
+assert.equal(EACCore.ruleMatches({label:"other",length:501,coverage:20},advancedRule),true);
+for(const operator of ["any",">",">=","<","<="]){
+ const expected={any:true,">":false,">=":true,"<":false,"<=":true}[operator];
+ assert.equal(EACCore.ruleMatches({label:"other",length:500,coverage:20},{...advancedRule,length:{operator,value:500}}),expected);
+}
+for(const invalid of [null,"rules",[null],[{...advancedRule,id:true}],[advancedRule,advancedRule],
+ [{...advancedRule,enabled:1}],[{...advancedRule,labels:[]}],[{...advancedRule,labels:["missing"]}],
+ [{...advancedRule,coverage:{operator:">",value:10.5}}],[{...advancedRule,length:{operator:"=",value:500}}]]){
+ assert.throws(()=>EACCore.rules(invalid,ruleLabels),/advanced/);
+}
 const savedMeta={sample_id:"sample_A",fingerprint:"fp",eac_path:"browser:a",eac_sha256:"hash"};
 const savedState={retain_sample:true,length:500,coverage:10,maxCoverage:null,labels:["eukaryota"],
-  excludedIds:new Set(["a"]),mode:"manual",reviewed:false,reviewed_at:null,note:"",expected_kept_contigs:null,expected_kept_bp:null};
-const savedContext={PROJECT:{dataset_id:"dataset",samples:[savedMeta]},settings:new Map([["sample_A",savedState]]),
+  excludedIds:new Set(["a"]),advancedRules:[advancedRule],mode:"manual",reviewed:false,reviewed_at:null,note:"",expected_kept_contigs:null,expected_kept_bp:null};
+const savedContext={C:EACCore,PROJECT:{dataset_id:"dataset",samples:[savedMeta]},settings:new Map([["sample_A",savedState]]),
   metadata:new Map([["sample_A",savedMeta]]),availableLabels:["eukaryota","other","NA"],
   normalizeLabels:labels=>labels,t:key=>key,valid:()=>true};
 vm.createContext(savedContext);
 vm.runInContext(reviewSource.slice(reviewSource.indexOf("function documentData()"),reviewSource.indexOf("let serverReady=")),savedContext);
 vm.runInContext(reviewSource.slice(reviewSource.indexOf("function restoreDocument("),reviewSource.indexOf("function listSamples(")),savedContext);
 const savedReview=savedContext.documentData();
-assert.equal(savedReview.schema_version,8);
+assert.equal(savedReview.schema_version,9);
+assert.equal(savedReview.samples[0].advanced_rules[0].length.value,500);
 assert.deepEqual(Array.from(savedReview.samples[0].excluded_seq_ids),["a"]);
 savedContext.restoreDocument(savedReview);
 assert.deepEqual(Array.from(savedContext.settings.get("sample_A").excludedIds),["a"]);
-const legacyReview=JSON.parse(JSON.stringify(savedReview));legacyReview.schema_version=7;delete legacyReview.samples[0].excluded_seq_ids;
+const legacyReview=JSON.parse(JSON.stringify(savedReview));legacyReview.schema_version=7;delete legacyReview.samples[0].excluded_seq_ids;delete legacyReview.samples[0].advanced_rules;
 savedContext.restoreDocument(legacyReview);
 assert.equal(savedContext.settings.get("sample_A").excludedIds.size,0);
+assert.equal(savedContext.settings.get("sample_A").advancedRules.length,0);
 const invalidReview=JSON.parse(JSON.stringify(savedReview));invalidReview.samples[0].excluded_seq_ids=["a","a"];
 assert.throws(()=>savedContext.restoreDocument(invalidReview),/wrongFields/);
 
@@ -126,7 +141,7 @@ function mockCanvas() {
   return canvas;
 }
 const renderContext = {
-  pointLayers: null, hoverPoints: [], rows: renderRows,
+  C:EACCore,pointLayers: null, hoverPoints: [], rows: renderRows,
   availableLabels: ["eukaryota", "other", "NA"], labelColor: index => normalPalette[index],
   document: {createElement: mockCanvas}
 };
@@ -135,8 +150,8 @@ vm.runInContext(reviewSource.slice(reviewSource.indexOf("  function preparePoint
 const geometry = {w: 300, h: 200, left: 20, right: 280, top: 20, bottom: 180,
   x: {a: 2, b: 4, f: length => 20 + (Math.log10(length) - 2) / 2 * 260},
   y: {b: 5, f: coverage => 180 - Math.asinh(coverage) / 5 * 160}};
-for (const retain of [true, false]) for (const labels of [["eukaryota"], ["other", "NA"], ["eukaryota", "other", "NA"]]) for (const excluded of [[], ["a", "b"]]) {
-  const settings = {length: 500, coverage: 10, maxCoverage: 20, retain_sample: retain, labels, excludedIds: new Set(excluded)};
+for (const retain of [true, false]) for (const labels of [["eukaryota"], ["other", "NA"], ["eukaryota", "other", "NA"]]) for (const excluded of [[], ["a", "b"]]) for (const advancedRules of [[],[advancedRule]]) {
+  const settings = {length: 500, coverage: 10, maxCoverage: 20, retain_sample: retain, labels, excludedIds: new Set(excluded),advancedRules};
   renderContext.result = EACCore.evaluate(renderRows, settings);
   renderContext.preparePointLayers(geometry, 1, settings);
   const cached = renderContext.pointLayers;
@@ -166,6 +181,19 @@ for (const retain of [true, false]) for (const labels of [["eukaryota"], ["other
   assert.equal(renderContext.pointLayers, cached);
   assert.equal(rasterizedPoints, rendered);
 }
+// Adding or disabling rules rebuilds selected appearances while preserving draw order.
+const beforeRules={length:500,coverage:10,maxCoverage:null,retain_sample:true,labels:ruleLabels,excludedIds:new Set(),advancedRules:[]};
+renderContext.result=EACCore.evaluate(renderRows,beforeRules);
+renderContext.preparePointLayers(geometry,1,beforeRules);
+const ruleCache=renderContext.pointLayers;
+const withRules={...beforeRules,advancedRules:[advancedRule]};
+renderContext.result=EACCore.evaluate(renderRows,withRules);
+renderContext.preparePointLayers(geometry,1,withRules);
+assert.notEqual(renderContext.pointLayers,ruleCache);
+assert.deepEqual(Array.from(renderContext.pointLayers.order),Array.from(ruleCache.order));
+const afterRulePaint=rasterizedPoints;
+renderContext.preparePointLayers(geometry,1,{...withRules,coverage:11});
+assert.equal(rasterizedPoints,afterRulePaint);
 // Fully overlapping, initially label-sorted input must be interleaved on both layers.
 const overlapRows = ["eukaryota", "other", "NA"].flatMap(label =>
   Array.from({length: 30}, () => ({length: 1000, coverage: 20, label})));
@@ -227,6 +255,14 @@ console.log("Seeded mixed-label order, cache reuse and filtering appearance pass
   const raw=JSON.parse(await prepared.blob.text());
   assert.equal(raw.input_sha256.fasta,crypto.createHash("sha256").update(fasta).digest("hex"));
   const cases=[
+    {name:"advanced",min:10,max:null,labels:ruleLabels,retain:true,rules:[advancedRule],count:2,bp:10501},
+    {name:"advanced_inclusive",min:10,max:null,labels:ruleLabels,retain:true,rules:[{...advancedRule,length:{operator:">=",value:500}}],count:1,bp:10001},
+    {name:"advanced_and",min:10,max:null,labels:ruleLabels,retain:true,rules:[{...advancedRule,coverage:{operator:"<",value:85}}],count:2,bp:10501},
+    {name:"advanced_disabled",min:10,max:null,labels:ruleLabels,retain:true,rules:[{...advancedRule,enabled:false}],count:3,bp:11436},
+    {name:"advanced_multi",min:10,max:null,labels:ruleLabels,retain:true,rules:[advancedRule,{...advancedRule,id:2,labels:["eukaryota"]}],count:1,bp:500},
+    {name:"advanced_overlap",min:10,max:null,labels:ruleLabels,retain:true,rules:[advancedRule,{...advancedRule,id:2}],count:2,bp:10501},
+    {name:"advanced_manual",min:10,max:null,labels:ruleLabels,retain:true,rules:[advancedRule],excluded:["a"],count:1,bp:500},
+    {name:"advanced_sample",min:null,max:null,labels:ruleLabels,retain:false,rules:[advancedRule],count:0,bp:0},
     {name:"default",min:10,max:null,labels:["eukaryota","other","NA"],retain:true,count:3,bp:11436},
     {name:"fractional",min:85,max:null,labels:["eukaryota","other","NA"],retain:true,count:1,bp:10001},
     {name:"upper",min:10,max:100,labels:["eukaryota","other","NA"],retain:true,count:2,bp:1435},
@@ -236,12 +272,13 @@ console.log("Seeded mixed-label order, cache reuse and filtering appearance pass
     {name:"manual_batch",min:10,max:null,labels:["eukaryota","other","NA"],retain:true,excluded:["a","c","d"],count:1,bp:500},
     {name:"manual_all",min:10,max:null,labels:["eukaryota","other","NA"],retain:true,excluded:["a","b","c","d"],count:0,bp:0}
   ];
-  let manualDecision;
+  let manualDecision,advancedDecision;
   for(const item of cases){
     const decision={sample_id:"sample_A",fingerprint:prepared.meta.fingerprint,eac_path:prepared.meta.eac_path,
       eac_sha256:prepared.meta.eac_sha256,reviewed:true,retain_sample:item.retain,min_length_bp:500,min_coverage:item.min,
-      max_coverage:item.max,labels:item.labels,excluded_seq_ids:item.excluded||[],expected_kept_contigs:item.count,expected_kept_bp:item.bp};
+      max_coverage:item.max,labels:item.labels,excluded_seq_ids:item.excluded||[],advanced_rules:item.rules||[],expected_kept_contigs:item.count,expected_kept_bp:item.bp};
     if(item.name==="manual")manualDecision=decision;
+    if(item.name==="advanced_multi")advancedDecision=decision;
     const result=await EACData.apply(prepared.blob,original,decision,prepared.meta);
     fs.writeFileSync(path.join(out,item.name+".fasta"),Buffer.from(await result.fasta.arrayBuffer()));
     fs.writeFileSync(path.join(out,item.name+".tsv"),await result.table.text());
@@ -269,6 +306,14 @@ console.log("Seeded mixed-label order, cache reuse and filtering appearance pass
   assert(!workerMessages.some(message=>message.type==="error"),JSON.stringify(workerMessages));
   const workerZip=workerMessages.find(message=>message.id===2&&message.type==="result").value;
   fs.writeFileSync(path.join(out,"worker-manual.zip"),Buffer.from(await workerZip.arrayBuffer()));
+  await workerHandler({data:{id:3,type:"export",decisions:{schema_version:9,dataset_id:webManifest.dataset_id,samples:[advancedDecision]}}});
+  assert(!workerMessages.some(message=>message.id===3&&message.type==="error"),JSON.stringify(workerMessages));
+  const advancedZip=workerMessages.find(message=>message.id===3&&message.type==="result").value;
+  fs.writeFileSync(path.join(out,"worker-advanced.zip"),Buffer.from(await advancedZip.arrayBuffer()));
+  const missingRules={...advancedDecision};delete missingRules.advanced_rules;
+  await workerHandler({data:{id:4,type:"export",decisions:{schema_version:9,dataset_id:webManifest.dataset_id,samples:[missingRules]}}});
+  assert(workerMessages.some(message=>message.id===4&&message.type==="error"));
+
   await assert.rejects(()=>EACData.prepare({...sample,coverage:new File([coverage+"b\t10\n"],"duplicate.tsv")},columns),/duplicate/);
   await assert.rejects(()=>EACData.prepare({...sample,coverage:new File([coverage.replace("b\t10\n","")],"missing.tsv")},columns),/same IDs/);
   await assert.rejects(()=>EACData.prepare({...sample,ecm:new File([ecm.replace("b\t500","b\t501")],"length.tsv")},columns),/length differs/);

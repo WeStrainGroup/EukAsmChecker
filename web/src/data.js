@@ -132,6 +132,7 @@
     if ("excluded_seq_ids" in decision && (!Array.isArray(decision.excluded_seq_ids) ||
         decision.excluded_seq_ids.some(id=>typeof id!=="string"||!id) ||
         new Set(decision.excluded_seq_ids).size!==decision.excluded_seq_ids.length)) fail("Invalid manual exclusions.");
+    EACCore.rules(decision.advanced_rules === undefined ? [] : decision.advanced_rules);
     if (decision.retain_sample) {
       if (!Number.isSafeInteger(decision.min_length_bp) || decision.min_length_bp<0 ||
           !Number.isSafeInteger(decision.min_coverage) || decision.min_coverage<0 ||
@@ -147,7 +148,7 @@
     const prepared=JSON.parse(await preparedBlob.text());
     if (await blobHash(original)!==prepared.input_sha256.fasta) fail("Original FASTA differs from the reviewed input.");
     const settings={retain_sample:decision.retain_sample,length:decision.min_length_bp,coverage:decision.min_coverage,
-      maxCoverage:decision.max_coverage,labels:decision.labels,
+      maxCoverage:decision.max_coverage,labels:decision.labels,advancedRules:EACCore.rules(decision.advanced_rules === undefined ? [] : decision.advanced_rules),
       excludedIds:EACCore.exclusions(decision.excluded_seq_ids ?? [],prepared.rows.map(row=>row[0]))};
     const parts=[], table=["seq_id\tlength_bp\tcoverage\tecm_label\tfilter_status\tfilter_reason\n"];
     let kept=0,bp=0,rangeStart=null,rangeEnd=null;

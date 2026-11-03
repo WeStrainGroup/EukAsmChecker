@@ -108,7 +108,7 @@ contig_3	750	7.25	eukaryota	removed	low_coverage
 contig_4	499	0	NA	removed	short_length;low_coverage
 ```
 
-移除原因包括 short_length、low_coverage、high_coverage、excluded_label 和 manual_exclusion，多个原因以分号连接。排除整个样本时，FASTA 为空，所有序列的原因为 excluded_sample。
+移除原因包括 short_length、low_coverage、high_coverage、excluded_label、manual_exclusion 和 `advanced_rule_<id>`，多个原因以分号连接。排除整个样本时，FASTA 为空，所有序列的原因为 excluded_sample。
 
 ## 筛选规则
 
@@ -122,10 +122,11 @@ contig_4	499	0	NA	removed	short_length;low_coverage
 | 最低&nbsp;coverage | `round(max(参考中位数 / 25, 10))`。参考集合为原始序列中标记为 `eukaryota` 且长度 >10 kb 的序列；集合为空时需手动指定下限。 |
 | 最高&nbsp;coverage | 原始最大值向上取整，默认不移除序列。 |
 | 纳入标签 | 默认全选，可保留任意非空标签组合。 |
+| 高级规则 | 初始为空。命中任意启用规则内全部条件的序列会被移除。规则属于当前样本，恢复默认时清空。 |
 | 手动移除 | 初始为空，选中的序列 ID 会持续被排除，直至手动恢复。“恢复默认”也会清空手动移除。 |
 | 保留样本 | 默认开启；关闭后移除该样本全部序列。 |
 
-保留序列须同时满足最小长度、包含端点的 coverage 区间和所选标签。Coverage 使用输入表中的逐序列平均值；参考集合包含零 coverage，每条序列等权。阈值使用整数，半值向上取整；筛选与输出表保留原始 coverage 精度。例如 84.9343× 即使显示为 85×，仍低于 85× 的下限。
+保留序列须同时满足最小长度、包含端点的 coverage 区间和所选标签，并通过高级规则与人工排除判断。Coverage 使用输入表中的逐序列平均值；参考集合包含零 coverage，每条序列等权。阈值使用整数，半值向上取整；筛选与输出表保留原始 coverage 精度。例如 84.9343× 即使显示为 85×，仍低于 85× 的下限。
 
 [EukContigMiner](https://github.com/WeStrainGroup/EukContigMiner#metrics)（ECM）对短 contig 的预测可靠性较低。对于 500–1,000 bp 序列，真核比例为 1% 时，测试 F1 约为 0.9。因此主簇内部分短 contig 可能因分类误差被标记为 `other`，应结合 coverage 和簇的位置判断。ECM 不分类 500 bp 以下序列，这些序列保留 `NA`。
 

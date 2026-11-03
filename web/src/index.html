@@ -34,7 +34,7 @@
 <div class="begin-row"><label class="project-name"><span data-text="projectName">Project name</span><input id="projectName" value="Assembly review" maxlength="120"></label><div class="begin-actions"><label class="file-button saved-review"><span id="decisionCaption" data-text="savedDecisions">Import review (.json)</span><input id="decisionFile" type="file" accept=".json"></label><button id="clearDecisions" class="quiet" aria-label="Clear imported review" hidden>×</button><button id="prepare" class="primary" data-text="prepare">Prepare review →</button></div></div>
 </main>
 <section id="reviewArea" hidden>
-<iframe id="reviewFrame" title="Assembly review" sandbox="allow-scripts allow-same-origin allow-downloads allow-popups allow-popups-to-escape-sandbox"></iframe>
+<iframe id="reviewFrame" title="Assembly review" sandbox="allow-scripts allow-forms allow-same-origin allow-downloads allow-popups allow-popups-to-escape-sandbox"></iframe>
 </section>
 <div id="activity" class="activity" hidden role="status"><div><span id="activityText"></span><button id="cancel" class="quiet" data-text="cancel">Cancel</button></div><progress id="progress" max="1" value="0"></progress></div>
 <p id="error" class="error" role="alert" hidden></p>

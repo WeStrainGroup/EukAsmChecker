@@ -116,6 +116,82 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Retained counts differ"):
             self.apply("stale_manual_counts")
 
+    def test_advanced_rules_filter_restore_and_manual_override(self):
+        self.document["schema_version"] = 9
+        d = self.document["samples"][0]
+        first = dict(id=1, enabled=True, labels=["other"], length=dict(operator=">=", value=500),
+                     coverage=dict(operator="<=", value=10))
+        second = dict(id=2, enabled=True, labels=["NA"], length=dict(operator="any", value=0),
+                      coverage=dict(operator=">", value=100))
+        d.update(advanced_rules=[first, second], excluded_seq_ids=[], expected_kept_contigs=1, expected_kept_bp=10001)
+        output = self.apply("advanced") / "sample_A"
+        self.assertEqual((output / "sample_A.fasta").read_bytes(), b">a original header\r\n" + b"A" * 10001 + b"\r\n")
+        rows = list(g.table(output / "sample_A.sequences.tsv"))
+        self.assertEqual(rows[1]["filter_reason"], "advanced_rule_1")
+        self.assertEqual(rows[2]["filter_reason"], "short_length;advanced_rule_2")
+        first["enabled"] = False
+        d.update(expected_kept_contigs=2, expected_kept_bp=10501)
+        self.apply("disabled")
+        first["enabled"] = True
+        d.update(excluded_seq_ids=["a"], expected_kept_contigs=0, expected_kept_bp=0)
+        self.assertEqual((self.apply("manual_advanced") / "sample_A/sample_A.fasta").read_bytes(), b"")
+        d["retain_sample"] = False
+        output = self.apply("excluded_advanced") / "sample_A"
+        self.assertTrue(all(row["filter_reason"] == "excluded_sample" for row in g.table(output / "sample_A.sequences.tsv")))
+
+    def test_advanced_boundaries_overlap_and_precision(self):
+        rule = dict(id=1, enabled=True, labels=["other"], length=dict(operator=">", value=500),
+                    coverage=dict(operator="any", value=0))
+        row = ["b", 500, 10.4, "other"]
+        for operator, expected in [("any", True), (">", False), (">=", True), ("<", False), ("<=", True)]:
+            rule["length"]["operator"] = operator
+            self.assertEqual(g.rule_matches(row, rule), expected)
+        numeric_rule = dict(rule, id=1.0, length=dict(operator=">", value=500.0))
+        validated = g.validate_advanced_rules([numeric_rule], {"other"})
+        self.assertIs(type(validated[0]["id"]), int)
+        self.assertIs(type(validated[0]["length"]["value"]), int)
+        rule["length"]["operator"] = "any"
+        rule["coverage"] = dict(operator=">", value=10)
+        self.assertTrue(g.rule_matches(row, rule))
+        d = self.document["samples"][0]
+        d["advanced_rules"] = [rule, dict(rule, id=2)]
+        self.assertEqual(g.reason(row, d), "advanced_rule_1;advanced_rule_2")
+        rule["labels"] = ["eukaryota"]
+        self.assertFalse(g.rule_matches(row, rule))
+
+    def test_invalid_advanced_rules_and_legacy_import(self):
+        import copy
+        self.document["schema_version"] = 9
+        d = self.document["samples"][0]
+        d["excluded_seq_ids"] = []
+        with self.assertRaisesRegex(ValueError, "Missing advanced"):
+            g.validate_decisions(self.manifest, self.document)
+        rule = dict(id=1, enabled=True, labels=["other"], length=dict(operator=">", value=500),
+                    coverage=dict(operator="any", value=0))
+        invalid = [None, "rule", [None], [dict(rule, id=True)], [rule, rule], [dict(rule, enabled=1)],
+                   [dict(rule, labels=[])], [dict(rule, labels=["missing"])], [dict(rule, labels=["other", "other"])],
+                   [dict(rule, length=dict(operator="=", value=500))],
+                   [dict(rule, coverage=dict(operator=">", value=10.5))],
+                   [dict(rule, coverage=dict(operator="any", value=True))],
+                   [dict(rule, coverage=dict(operator="any", value=2**53))]]
+        for value in invalid:
+            with self.subTest(value=value):
+                d["advanced_rules"] = copy.deepcopy(value)
+                with self.assertRaisesRegex(ValueError, "advanced"):
+                    g.validate_decisions(self.manifest, self.document)
+        for version in (7, 8):
+            self.document["schema_version"] = version
+            d.pop("advanced_rules", None)
+            restored = g.validate_decisions(self.manifest, self.document)
+            self.assertEqual(restored["sample_A"]["advanced_rules"], [])
+
+    def test_advanced_rules_require_matching_counts(self):
+        self.document["schema_version"] = 9
+        self.document["samples"][0].update(excluded_seq_ids=[], advanced_rules=[
+            dict(id=1, enabled=True, labels=["other"], length=dict(operator="any", value=0), coverage=dict(operator="any", value=0))])
+        with self.assertRaisesRegex(ValueError, "Retained counts differ"):
+            self.apply("advanced_stale_counts")
+
     def test_default_maximum_and_inclusive_bound(self):
         d=self.document["samples"][0]
         d.update(min_length_bp=0,min_coverage=0,expected_kept_contigs=3,expected_kept_bp=11000)

@@ -39,10 +39,10 @@ class BrowserParityTests(unittest.TestCase):
                     decision = dict(sample_id="sample_A", fingerprint=meta["fingerprint"],
                         eac_path=meta["eac_path"], eac_sha256=meta["eac_sha256"],
                         reviewed=True, retain_sample=case["retain"], min_length_bp=500,
-                        min_coverage=case["min"], max_coverage=case["max"], labels=case["labels"], excluded_seq_ids=case.get("excluded", []),
+                        min_coverage=case["min"], max_coverage=case["max"], labels=case["labels"], excluded_seq_ids=case.get("excluded", []),advanced_rules=case.get("rules", []),
                         expected_kept_contigs=case["count"], expected_kept_bp=case["bp"],
                         mode="manual", note="", reviewed_at="synthetic")
-                    document = dict(schema_version=8, dataset_id=manifest["dataset_id"], samples=[decision])
+                    document = dict(schema_version=9, dataset_id=manifest["dataset_id"], samples=[decision])
                     path = work / "decisions.json"
                     path.write_text(json.dumps(document))
                     output = work / ("cli_" + case["name"])
@@ -67,3 +67,9 @@ class BrowserParityTests(unittest.TestCase):
                 self.assertEqual(saved["schema_version"], 8)
                 self.assertEqual(saved["samples"][0]["excluded_seq_ids"], ["b"])
                 self.assertEqual(archive.read("sample_A/sample_A.fasta"), (work / "manual.fasta").read_bytes())
+
+            with zipfile.ZipFile(work / "worker-advanced.zip") as archive:
+                saved = json.loads(archive.read("decisions.json"))
+                self.assertEqual(saved["schema_version"], 9)
+                self.assertEqual(len(saved["samples"][0]["advanced_rules"]), 2)
+                self.assertEqual(archive.read("sample_A/sample_A.fasta"), (work / "advanced_multi.fasta").read_bytes())

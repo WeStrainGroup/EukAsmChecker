@@ -116,6 +116,50 @@ def reference(rows):
                 min_coverage=math.floor(max(median / 25, 10) + 0.5) if median is not None else None)
 
 
+def validate_advanced_rules(rules, available):
+    require(isinstance(rules, list), "Invalid advanced rules.")
+    ids = set()
+    for rule in rules:
+        require(isinstance(rule, dict), "Invalid advanced rule.")
+        rule_id = rule.get("id")
+        require(type(rule_id) in (int, float) and 0 < rule_id <= 2**53 - 1 and int(rule_id) == rule_id and rule_id not in ids,
+                "Invalid advanced rule ID.")
+        rule["id"] = int(rule_id)
+        ids.add(rule_id)
+        require(isinstance(rule.get("enabled"), bool), "Invalid advanced rule state.")
+        labels = rule.get("labels")
+        require(isinstance(labels, list) and bool(labels) and all(isinstance(label, str) for label in labels)
+                and len(labels) == len(set(labels)) and set(labels) <= available,
+                "Invalid advanced rule labels.")
+        for field in ("length", "coverage"):
+            condition = rule.get(field)
+            require(isinstance(condition, dict) and condition.get("operator") in ("any", ">", ">=", "<", "<="),
+                    "Invalid advanced rule operator.")
+            value = condition.get("value")
+            require(type(value) in (int, float) and 0 <= value <= 2**53 - 1 and int(value) == value,
+                    "Invalid advanced rule threshold.")
+            condition["value"] = int(value)
+    return rules
+
+
+def condition_matches(value, condition):
+    operator, threshold = condition["operator"], condition["value"]
+    if operator == "any":
+        return True
+    if operator == ">":
+        return value > threshold
+    if operator == ">=":
+        return value >= threshold
+    if operator == "<":
+        return value < threshold
+    return value <= threshold
+
+
+def rule_matches(row, rule):
+    return (row[3] in rule["labels"] and condition_matches(row[1], rule["length"])
+            and condition_matches(row[2], rule["coverage"]))
+
+
 def reason(row, decision):
     if decision.get("retain_sample", True) is False:
         return "excluded_sample"
@@ -130,6 +174,9 @@ def reason(row, decision):
         reasons.append("excluded_label")
     if row[0] in decision.get("excluded_seq_ids", ()):
         reasons.append("manual_exclusion")
+    for rule in decision.get("advanced_rules", []):
+        if rule["enabled"] and rule_matches(row, rule):
+            reasons.append("advanced_rule_" + str(rule["id"]))
     return ";".join(reasons) or "pass"
 
 
@@ -328,7 +375,7 @@ def render_review(manifest, destination):
 
 def validate_decisions(manifest, decisions, complete=True):
     version = decisions.get("schema_version")
-    require(version in (2, 3, 4, 5, 6, 7, 8), "Unsupported decisions schema.")
+    require(version in (2, 3, 4, 5, 6, 7, 8, 9), "Unsupported decisions schema.")
     if version >= 7:
         require(decisions.get("dataset_id") == manifest["dataset_id"], "Decisions belong to another dataset.")
     entries = decisions.get("samples")
@@ -362,6 +409,8 @@ def validate_decisions(manifest, decisions, complete=True):
         require(isinstance(excluded, list) and all(isinstance(value, str) and value for value in excluded)
                 and len(excluded) == len(set(excluded)), "Invalid manual exclusions.")
         d["excluded_seq_ids"] = excluded
+        require(version < 9 or "advanced_rules" in d, "Missing advanced rules.")
+        d["advanced_rules"] = validate_advanced_rules(d.get("advanced_rules", []), available)
         for field in ("min_length_bp", "min_coverage"):
             if d.get(field) is not None:
                 d[field] = number(d[field], field, field == "min_length_bp" or version >= 4)
@@ -616,7 +665,7 @@ def apply(args):
         staged_decisions = task / "decisions.json"
         copy_input(decisions_path, staged_decisions)
         document = json.loads(staged_decisions.read_text())
-        require(document.get("schema_version") in (7, 8),
+        require(document.get("schema_version") in (7, 8, 9),
                 "Legacy decisions need source references. Import them into a review of the same prepared samples, then Save decisions and retry.")
         entries = document.get("samples")
         require(isinstance(entries, list) and entries, "No sample decisions.")

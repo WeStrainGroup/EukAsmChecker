@@ -28,7 +28,7 @@ function setLanguage(){
 function updateDecisionCaption(){
   const file=$("decisionFile").files[0];
   $("decisionCaption").textContent=file?file.name:say(en.savedDecisions,zh.savedDecisions);
-  $("decisionCaption").parentElement.title=file?file.name:say("Select decisions.json from a ZIP downloaded with Save results. It restores thresholds, labels, manual removals, sample choices and notes. Select the matching FASTA and tables again.","选择之前通过“保存结果”下载的 ZIP 中的 decisions.json，恢复阈值、标签、手动移除、样本取舍和备注。还需重新选择对应的 FASTA 和表格。");
+  $("decisionCaption").parentElement.title=file?file.name:say("Select decisions.json from a ZIP downloaded with Save results. It restores thresholds, labels, advanced rules, manual removals, sample choices and notes. Select the matching FASTA and tables again.","选择之前通过“保存结果”下载的 ZIP 中的 decisions.json，恢复阈值、标签、高级规则、手动移除、样本取舍和备注。还需重新选择对应的 FASTA 和表格。");
   $("clearDecisions").hidden=!file;
   $("clearDecisions").setAttribute("aria-label",say("Clear imported review","清除导入的审阅记录"));
 }

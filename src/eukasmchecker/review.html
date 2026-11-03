@@ -93,13 +93,40 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 #selectionHint{color:#6e6e73}
 #selectionCount{color:#6e6e73;white-space:nowrap}
 #selectionBox{position:absolute;border:1px solid #515157;background:#51515712;pointer-events:none;z-index:3}
+
+.advanced-title{font-size:12px;font-weight:400;line-height:18px;margin:0 0 7px}
+.advanced-list{margin:10px 0}
+.advanced-rule{padding:0 0 9px;margin-bottom:9px;border-bottom:1px solid #e8e8ed}
+.advanced-rule:last-child{margin-bottom:0}
+.advanced-rule label{display:grid;grid-template-columns:14px minmax(0,1fr);gap:5px;align-items:start;margin:0;font-size:11px;line-height:17px}
+.advanced-rule input{margin:2px 0 0;accent-color:#1d1d1f}
+.advanced-rule[data-enabled=false] label span{color:#86868b}
+.advanced-footer{display:flex;align-items:center;gap:7px;margin-top:3px;font-size:11px}
+.advanced-footer span{margin-right:auto;color:#6e6e73}
+.advanced-footer button{border:0;background:transparent;padding:2px 0;font-size:11px}
+#addAdvanced{width:100%;height:32px;padding:6px 8px;font-size:12px}
+#advancedDialog{width:min(350px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #e0e0e5;border-radius:12px;padding:20px;color:#1d1d1f;background:#fff;box-shadow:0 14px 50px #00000018;font-size:12px}
+#advancedDialog::backdrop{background:#00000024}
+.advanced-dialog-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.advanced-dialog-heading h2{font-size:15px;font-weight:400;letter-spacing:0}
+.advanced-dialog-heading button{border:0;padding:2px 0;font-size:11px}
+#advancedDialog p{margin:0;color:#6e6e73;line-height:1.6}
+.advanced-editor{display:grid;gap:14px;margin-top:16px}
+.advanced-editor label,.advanced-editor .control-label{font-size:12px;line-height:18px;margin-bottom:7px}
+.advanced-condition{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:6px}
+.advanced-condition input,.advanced-condition select{width:100%;height:32px;padding:5px 8px}
+#advancedLabels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#advancedLabels button{width:100%;min-width:0;min-height:32px;padding:5px 8px;overflow-wrap:anywhere}
+.advanced-dialog-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:18px}
+.advanced-dialog-actions button{padding:6px 10px}
+#advancedDialog #advancedError{color:#a3252b;margin-top:12px}
 </style></head><body>
 <header><div><h1 data-i18n="title">EukAsmChecker</h1><div class="header-meta"><div id="projectTitle" class="small muted"></div><div id="saveStatus" class="small muted" aria-live="polite"></div></div></div><div><div class="toolbar"><div class="language-toggle" role="group" aria-label="Language"><button id="langEn" type="button" aria-pressed="true">English</button><button id="langZh" type="button" aria-pressed="false">中文</button></div><button id="restore" type="button" data-i18n="restore">Import decisions</button><button id="save" class="primary" type="button" data-i18n="save">Save decisions</button><input id="restoreFile" type="file" accept=".json" hidden></div></div></header>
 <div class="shell"><aside><label class="sr-only" for="search" data-i18n="search">Search samples</label><input id="search" class="sidebar-control" type="search"><button id="onlyPending" class="sidebar-control" type="button" aria-pressed="false" data-i18n="onlyPending">Unreviewed only</button><button id="markAll" class="sidebar-control" type="button" disabled data-i18n="markAll">Mark all reviewed</button><div id="progress" class="small muted" aria-live="polite"></div><nav id="sampleList" aria-label="Project samples"></nav></aside><div id="splitter" role="separator" aria-orientation="vertical" aria-label="Resize sample sidebar" tabindex="0" aria-valuemin="150" aria-valuemax="520" aria-valuenow="230"></div>
 <main><div id="message" role="alert"></div><div class="topline"><div class="sample-heading"><h2 id="chartTitle"></h2><span id="currentStatus"></span></div><div class="toolbar"><label class="sample-retention"><input id="retainSample" type="checkbox" checked disabled><span data-i18n="retainSample">Retain sample</span></label><button id="previous" type="button" data-i18n="previous">Previous sample</button><button id="confirm" class="primary" type="button" disabled data-i18n="confirm">Confirm &amp; next</button></div></div><div id="loading"></div>
 <div id="sampleContent" hidden>
 <details class="module" id="filteringModule" open><summary data-i18n="filteringTitle">Filtering</summary>
-<div class="filtering-layout"><div class="controls"><div class="threshold-control"><label for="length" data-i18n="minLength">Minimum length (bp)</label><input id="length" type="number" min="0" step="1"><input id="lengthRange" type="range" min="0" max="1000"></div><div class="threshold-control"><div class="coverage-heading"><label id="coverageHeading" for="coverage" data-i18n="minCoverage" tabindex="0" aria-describedby="reference">Minimum coverage (×)</label><div id="reference" role="tooltip" hidden></div></div><input id="coverage" type="number" min="0" step="1"><input id="coverageRange" type="range" min="0" max="1000"></div><div class="threshold-control"><label for="maxCoverage" data-i18n="maxCoverage">Maximum coverage (×)</label><input id="maxCoverage" type="number" min="0" step="1"><input id="maxCoverageRange" type="range" min="0" max="1000"></div><div class="label-control"><span class="control-label" id="labelTitle" data-i18n="labels">EukContigMiner labels</span><div id="labels" role="group" aria-labelledby="labelTitle"></div></div><div class="resetline"><span id="mode"></span><button id="reset" type="button" data-i18n="reset">Reset defaults</button></div><div class="distribution-control"><label for="distributionMode" data-i18n="distributionMode">Distributions</label><select id="distributionMode"><option value="filter" data-i18n="distributionFilter">filtering</option><option value="label" data-i18n="distributionLabels">all labels</option><option value="euk-other" selected data-i18n="distributionEukOther">euk + other</option></select></div><div class="plot-size-control"><label for="plotPercent" data-i18n="plotSizeLabel">Plot size (%)</label><input id="plotPercent" type="number" min="50" max="100" step="1" value="100"></div></div>
+<div class="filtering-layout"><div class="controls"><div class="threshold-control"><label for="length" data-i18n="minLength">Minimum length (bp)</label><input id="length" type="number" min="0" step="1"><input id="lengthRange" type="range" min="0" max="1000"></div><div class="threshold-control"><div class="coverage-heading"><label id="coverageHeading" for="coverage" data-i18n="minCoverage" tabindex="0" aria-describedby="reference">Minimum coverage (×)</label><div id="reference" role="tooltip" hidden></div></div><input id="coverage" type="number" min="0" step="1"><input id="coverageRange" type="range" min="0" max="1000"></div><div class="threshold-control"><label for="maxCoverage" data-i18n="maxCoverage">Maximum coverage (×)</label><input id="maxCoverage" type="number" min="0" step="1"><input id="maxCoverageRange" type="range" min="0" max="1000"></div><div class="label-control"><span class="control-label" id="labelTitle" data-i18n="labels">EukContigMiner labels</span><div id="labels" role="group" aria-labelledby="labelTitle"></div></div><div class="advanced-controls"><h3 class="advanced-title" data-i18n="advancedTitle">Advanced rules</h3><div id="advancedList" class="advanced-list" hidden></div><button id="addAdvanced" type="button" data-i18n="addAdvanced">Add exclusion rule</button></div><div class="resetline"><span id="mode"></span><button id="reset" type="button" data-i18n="reset">Reset defaults</button></div><div class="distribution-control"><label for="distributionMode" data-i18n="distributionMode">Distributions</label><select id="distributionMode"><option value="filter" data-i18n="distributionFilter">filtering</option><option value="label" data-i18n="distributionLabels">all labels</option><option value="euk-other" selected data-i18n="distributionEukOther">euk + other</option></select></div><div class="plot-size-control"><label for="plotPercent" data-i18n="plotSizeLabel">Plot size (%)</label><input id="plotPercent" type="number" min="50" max="100" step="1" value="100"></div></div>
 <div class="filtering-plot"><div class="plotbar"><div class="legend" id="legend"></div>
 <div class="selection-tools"><div class="selection-group"><div class="selection-heading"><span id="selectionHint" data-i18n="selectPoints">Click or drag to manually select</span><span id="selectionCount" aria-live="polite"></span></div><div class="selection-actions"><button id="removeSelected" type="button" disabled data-i18n="removeSelected">Remove selected</button><button id="restoreSelected" type="button" disabled data-i18n="restoreSelected">Restore selected</button></div></div></div></div>
 <div id="plot"><canvas id="canvas" role="img" tabindex="0"></canvas><div id="selectionBox" hidden></div><div id="tooltip" class="tooltip" role="tooltip" hidden></div></div>
@@ -116,8 +143,20 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 </tbody></table>
 </section></details>
 <details class="module" id="noteModule" open><summary id="noteTitle" data-i18n="note">Note</summary><div class="reviewline"><textarea id="note" aria-labelledby="noteTitle"></textarea></div></details>
-<details class="module" id="ruleModule"><summary data-i18n="rulesTitle">Rule</summary><ul><li data-i18n="ruleReference"></li><li id="labelHint" data-i18n="ruleThreshold"></li><li data-i18n="ruleDisplay"></li><li data-i18n="ruleSelection"></li><li data-i18n="ruleInterpretation"></li><li data-i18n="ruleOutput"></li></ul><p><a href="https://github.com/WeStrainGroup/EukAsmChecker#filtering-rules" target="_blank" rel="noopener" data-i18n="fullDocumentation">Full methods and file formats</a></p></details>
+<details class="module" id="ruleModule"><summary data-i18n="rulesTitle">Rule</summary><ul><li data-i18n="ruleReference"></li><li id="labelHint" data-i18n="ruleThreshold"></li><li data-i18n="ruleDisplay"></li><li data-i18n="ruleSelection"></li><li data-i18n="ruleAdvanced"></li><li data-i18n="ruleInterpretation"></li><li data-i18n="ruleOutput"></li></ul><p><a href="https://github.com/WeStrainGroup/EukAsmChecker#filtering-rules" target="_blank" rel="noopener" data-i18n="fullDocumentation">Full methods and file formats</a></p></details>
 </div></main></div>
+<dialog id="advancedDialog" aria-labelledby="advancedDialogTitle">
+<form id="advancedForm">
+<div class="advanced-dialog-heading"><h2 id="advancedDialogTitle"></h2><button id="closeAdvanced" type="button" data-i18n="closeAdvanced">Close</button></div>
+<p data-i18n="advancedHelp">Remove sequences matching all conditions.</p>
+<div class="advanced-editor">
+<div><label for="advancedLengthOperator" data-i18n="advancedLength">Length (bp)</label><div class="advanced-condition"><select id="advancedLengthOperator"></select><input id="advancedLengthValue" type="number" min="0" step="1" required aria-label="Rule length in bp"></div></div>
+<div><label for="advancedCoverageOperator" data-i18n="advancedCoverage">Coverage (×)</label><div class="advanced-condition"><select id="advancedCoverageOperator"></select><input id="advancedCoverageValue" type="number" min="0" step="1" required aria-label="Rule coverage"></div></div>
+<div><span class="control-label" data-i18n="advancedLabels">Labels</span><div id="advancedLabels" role="group" aria-label="Rule labels"></div></div>
+</div>
+<p id="advancedError" role="alert" hidden></p>
+<div class="advanced-dialog-actions"><button id="cancelAdvanced" type="button" data-i18n="cancelAdvanced">Cancel</button><button type="submit" class="primary" data-i18n="saveAdvanced">Save rule</button></div>
+</form></dialog>
 <script>
 "use strict";
 const PROJECT=/*PROJECT_MANIFEST*/null;
@@ -128,8 +167,33 @@ const C={
   for(const id of excluded)if(!known.has(id))throw new Error("Unknown manually excluded sequence: "+id);
   return excluded;
  },
+ rules(value, available=null){
+  if(!Array.isArray(value))throw new Error("Invalid advanced rules.");
+  const ids=new Set();
+  return value.map(rule=>{
+   if(!rule||!Number.isSafeInteger(rule.id)||rule.id<1||ids.has(rule.id)||typeof rule.enabled!=="boolean")throw new Error("Invalid advanced rule ID or state.");
+   ids.add(rule.id);
+   if(!Array.isArray(rule.labels)||!rule.labels.length||new Set(rule.labels).size!==rule.labels.length||rule.labels.some(label=>typeof label!=="string"||!label||(available&&!available.includes(label))))throw new Error("Invalid advanced rule labels.");
+   for(const field of ["length","coverage"]){
+    const condition=rule[field];
+    if(!condition||!["any",">",">=","<","<="].includes(condition.operator)||!Number.isSafeInteger(condition.value)||condition.value<0)throw new Error("Invalid advanced rule condition.");
+   }
+   return {id:rule.id,enabled:rule.enabled,labels:[...rule.labels],length:{...rule.length},coverage:{...rule.coverage}};
+  });
+ },
+ condition(value, condition){
+  switch(condition.operator){
+   case "any":return true;
+   case ">":return value>condition.value;
+   case ">=":return value>=condition.value;
+   case "<":return value<condition.value;
+   case "<=":return value<=condition.value;
+   default:return false;
+  }
+ },
+ ruleMatches(row, rule){return rule.labels.includes(row.label)&&this.condition(row.length,rule.length)&&this.condition(row.coverage,rule.coverage);},
  reference(rows){const v=rows.filter(r=>r.length>10000&&r.label==="eukaryota").map(r=>r.coverage).sort((a,b)=>a-b),n=v.length,m=n?v[Math.floor(n/2)]/2+v[Math.floor((n-1)/2)]/2:null;return{n,median:m,min:n?v[0]:null,max:n?v[n-1]:null,cutoff:m===null?null:Math.round(Math.max(m/25,10))};},
- reasons(r,s){if(s.retain_sample===false)return ["excluded_sample"];const a=[];if(r.length<s.length)a.push("short_length");if(r.coverage<s.coverage)a.push("low_coverage");if(s.maxCoverage!==null&&s.maxCoverage!==undefined&&r.coverage>s.maxCoverage)a.push("high_coverage");if(!s.labels.includes(r.label))a.push("excluded_label");if(s.excludedIds?.has(r.id))a.push("manual_exclusion");return a;},
+ reasons(r,s){if(s.retain_sample===false)return ["excluded_sample"];const a=[];if(r.length<s.length)a.push("short_length");if(r.coverage<s.coverage)a.push("low_coverage");if(s.maxCoverage!==null&&s.maxCoverage!==undefined&&r.coverage>s.maxCoverage)a.push("high_coverage");if(!s.labels.includes(r.label))a.push("excluded_label");if(s.excludedIds?.has(r.id))a.push("manual_exclusion");for(const rule of s.advancedRules||[])if(rule.enabled&&this.ruleMatches(r,rule))a.push("advanced_rule_"+rule.id);return a;},
  evaluate(rows,s){const groups={};let kept=0,bp=0,keptBp=0;const annotated=rows.map(r=>{const why=this.reasons(r,s),keep=!why.length,g=groups[r.label]??=( {count:0,bp:0,kept:0,keptBp:0});g.count++;g.bp+=r.length;bp+=r.length;if(keep){kept++;keptBp+=r.length;g.kept++;g.keptBp+=r.length;}return{keep,reasons:why};});return{annotated,groups,count:rows.length,kept,bp,keptBp};}
 };
 (async () => {
@@ -185,9 +249,25 @@ Object.assign(translations.zh,{
  selectionHelp:"点击切换单点选择。框选区域，若区域内全部已选中则取消选择。Delete 移除选中序列，Esc 清空选择。",
  manual_exclusion:"手动移除",ruleSelection:"点击切换单点选择。框选区域，全部已选中时再次框选会取消选择。“移除选中”应用排除，“恢复选中”撤销所选点的手动排除。操作后取消选择，长度、coverage 和标签筛选仍然生效。"
 });
+Object.assign(translations.en,{
+ advancedTitle:"Advanced rules",addAdvanced:"Add exclusion rule",newAdvanced:"New exclusion rule",editAdvanced:"Edit exclusion rule",
+ closeAdvanced:"Close",cancelAdvanced:"Cancel",saveAdvanced:"Save rule",advancedHelp:"Remove sequences matching all conditions.",
+ advancedLength:"Length (bp)",advancedCoverage:"Coverage (×)",advancedLabels:"Labels",advancedAny:"Any",advancedEdit:"Edit",advancedDelete:"Delete",advancedOff:"Off",
+ advancedSelectLabel:"Select at least one label.",advancedSpecify:"Choose a label subset, length condition or coverage condition.",advancedInvalid:"Invalid advanced rule.",
+ advancedMatches:n=>n+" matched",advancedReason:id=>"advanced rule "+id,
+ ruleAdvanced:"Advanced rules apply to this sample. Conditions within a rule use AND; rules use OR. Reset defaults clears the rules."
+});
+Object.assign(translations.zh,{
+ advancedTitle:"高级规则",addAdvanced:"添加排除规则",newAdvanced:"新增排除规则",editAdvanced:"编辑排除规则",
+ closeAdvanced:"关闭",cancelAdvanced:"取消",saveAdvanced:"保存规则",advancedHelp:"删除同时满足全部条件的序列。",
+ advancedLength:"长度（bp）",advancedCoverage:"Coverage（×）",advancedLabels:"标签",advancedAny:"不限",advancedEdit:"编辑",advancedDelete:"删除",advancedOff:"已停用",
+ advancedSelectLabel:"请至少选择一个标签。",advancedSpecify:"请选择标签子集，或设置长度、coverage 条件。",advancedInvalid:"高级规则无效。",
+ advancedMatches:n=>"命中 "+n+" 条",advancedReason:id=>"高级规则 "+id,
+ ruleAdvanced:"高级规则作用于当前样本。同一规则内的条件须同时满足，多条规则命中任意一条即可删除。恢复默认会清空规则。"
+});
 let lang="en";
 try{lang=localStorage.getItem("genome-review-language")==="zh"?"zh":"en";}catch(e){}
-const t=k=>translations[lang][k],tagName=k=>k==="eukaryota"?"euk":k,reasonText=k=>t(k);
+const t=k=>translations[lang][k],tagName=k=>k==="eukaryota"?"euk":k,reasonText=k=>k.startsWith("advanced_rule_")?translations[lang].advancedReason(k.slice(14)):t(k);
 const referenceTip=$("reference"),coverageHeading=$("coverageHeading");
 function showReference(){
  referenceTip.hidden=false;const a=coverageHeading.getBoundingClientRect(),b=referenceTip.getBoundingClientRect();
@@ -218,8 +298,8 @@ const metadata=new Map(PROJECT.samples.map(m=>[m.sample_id,m]));
 const state=()=>settings.get(sample),error=m=>{$("message").textContent=m||"";},setStatus=k=>{statusKey=k;$("saveStatus").textContent=t(k);};
 const valid=s=>s.retain_sample===false||(Number.isSafeInteger(s.length)&&s.length>=0&&Number.isSafeInteger(s.coverage)&&s.coverage>=0&&(s.maxCoverage===null||(Number.isSafeInteger(s.maxCoverage)&&s.maxCoverage>=s.coverage))&&validLabels(s.labels));
 const exampleNote=m=>PROJECT.browser_demo&&m?.example?m.example[lang]:"";
-for(const m of PROJECT.samples)settings.set(m.sample_id,{retain_sample:true,maxCoverage:null,length:500,coverage:m.reference.min_coverage===null?null:Math.round(m.reference.min_coverage),labels:[...availableLabels],excludedIds:new Set(),mode:"default",reviewed:false,reviewed_at:null,note:exampleNote(m),expected_kept_contigs:null,expected_kept_bp:null});
-function documentData(){return{schema_version:8,dataset_id:PROJECT.dataset_id,exported_at:new Date().toISOString(),samples:PROJECT.samples.map(m=>{const s=settings.get(m.sample_id);return{sample_id:m.sample_id,fingerprint:m.fingerprint,eac_path:m.eac_path,eac_sha256:m.eac_sha256,retain_sample:s.retain_sample,min_length_bp:s.length,min_coverage:s.coverage,max_coverage:s.maxCoverage,labels:[...s.labels],excluded_seq_ids:[...s.excludedIds],mode:s.mode,reviewed:s.reviewed,reviewed_at:s.reviewed_at,note:s.note,expected_kept_contigs:s.expected_kept_contigs,expected_kept_bp:s.expected_kept_bp};})};}
+for(const m of PROJECT.samples)settings.set(m.sample_id,{retain_sample:true,maxCoverage:null,length:500,coverage:m.reference.min_coverage===null?null:Math.round(m.reference.min_coverage),labels:[...availableLabels],excludedIds:new Set(),advancedRules:[],mode:"default",reviewed:false,reviewed_at:null,note:exampleNote(m),expected_kept_contigs:null,expected_kept_bp:null});
+function documentData(){return{schema_version:9,dataset_id:PROJECT.dataset_id,exported_at:new Date().toISOString(),samples:PROJECT.samples.map(m=>{const s=settings.get(m.sample_id);return{sample_id:m.sample_id,fingerprint:m.fingerprint,eac_path:m.eac_path,eac_sha256:m.eac_sha256,retain_sample:s.retain_sample,min_length_bp:s.length,min_coverage:s.coverage,max_coverage:s.maxCoverage,labels:[...s.labels],excluded_seq_ids:[...s.excludedIds],advanced_rules:s.advancedRules,mode:s.mode,reviewed:s.reviewed,reviewed_at:s.reviewed_at,note:s.note,expected_kept_contigs:s.expected_kept_contigs,expected_kept_bp:s.expected_kept_bp};})};}
 let serverReady=!PROJECT.review_server,serverRevision="",remoteConflict=false;
 let remoteSaveChain=Promise.resolve();
 function saveLocal(){
@@ -257,7 +337,7 @@ async function initializeProgress(){
 }
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveLocal,200);}
 function restoreDocument(d){
- if(![2,3,4,5,6,7,8].includes(d.schema_version)||(d.schema_version>=7&&d.dataset_id!==PROJECT.dataset_id)||!Array.isArray(d.samples)||d.samples.length!==PROJECT.samples.length)throw new Error(t("wrongDocument"));
+ if(![2,3,4,5,6,7,8,9].includes(d.schema_version)||(d.schema_version>=7&&d.dataset_id!==PROJECT.dataset_id)||!Array.isArray(d.samples)||d.samples.length!==PROJECT.samples.length)throw new Error(t("wrongDocument"));
  const next=new Map();
  for(const entry of d.samples){
   const m=metadata.get(entry.sample_id);
@@ -266,7 +346,9 @@ function restoreDocument(d){
   const excluded=entry.excluded_seq_ids ?? [];
   if((d.schema_version>=8&&!Array.isArray(entry.excluded_seq_ids))||!Array.isArray(excluded)||excluded.some(id=>typeof id!=="string"||!id)||new Set(excluded).size!==excluded.length)throw new Error(t("wrongFields")+entry.sample_id);
   const labels=normalizeLabels(entry.labels);
-  const s={retain_sample:d.schema_version>=5?entry.retain_sample:true,length:entry.min_length_bp,coverage:entry.min_coverage,maxCoverage:d.schema_version>=6?entry.max_coverage:null,labels,excludedIds:new Set(excluded),mode:entry.mode==="default"?"default":"manual",reviewed:entry.reviewed,reviewed_at:entry.reviewed_at,note:entry.note??"",expected_kept_contigs:entry.expected_kept_contigs,expected_kept_bp:entry.expected_kept_bp};
+  if(d.schema_version>=9&&!Array.isArray(entry.advanced_rules))throw new Error(t("wrongFields")+entry.sample_id);
+  const advancedRules=C.rules(entry.advanced_rules===undefined?[]:entry.advanced_rules,availableLabels);
+  const s={advancedRules,retain_sample:d.schema_version>=5?entry.retain_sample:true,length:entry.min_length_bp,coverage:entry.min_coverage,maxCoverage:d.schema_version>=6?entry.max_coverage:null,labels,excludedIds:new Set(excluded),mode:entry.mode==="default"?"default":"manual",reviewed:entry.reviewed,reviewed_at:entry.reviewed_at,note:entry.note??"",expected_kept_contigs:entry.expected_kept_contigs,expected_kept_bp:entry.expected_kept_bp};
   if(s.maxCoverage!==null&&(!Number.isSafeInteger(s.maxCoverage)||s.maxCoverage<0))throw new Error(t("wrongThresholds")+entry.sample_id);
   if(typeof s.retain_sample!=="boolean"||typeof s.reviewed!=="boolean"||typeof s.note!=="string"||!Array.isArray(labels)||new Set(labels).size!==labels.length||!labels.every(k=>availableLabels.includes(k)))throw new Error(t("wrongFields")+entry.sample_id);
   if(s.length!==null&&(!Number.isSafeInteger(s.length)||s.length<0)||s.coverage!==null&&(!Number.isFinite(s.coverage)||s.coverage<0))throw new Error(t("wrongThresholds")+entry.sample_id);
@@ -356,6 +438,77 @@ function renderLabels(){
   $("labels").append(b);
  }
 }
+let advancedDraft=null,advancedSample="";
+function advancedSummary(rule){
+ const parts=[];
+ for(const field of ["length","coverage"]){
+  const condition=rule[field];
+  if(condition.operator==="any")continue;
+  const operator={">=":"≥","<=":"≤"}[condition.operator]||condition.operator;
+  parts.push(format(condition.value)+(field==="length"?" bp":"×"));
+  parts[parts.length-1]=operator+" "+parts[parts.length-1];
+ }
+ parts.push(rule.labels.map(tagName).join(" + "));
+ return parts.join(" · ");
+}
+function changeAdvancedRules(rules){
+ state().advancedRules=rules;state().mode="manual";invalidate();refresh();
+}
+function renderAdvancedRules(){
+ const list=$("advancedList"),rules=state().advancedRules;
+ list.replaceChildren();list.hidden=!rules.length;
+ for(const rule of rules){
+  const item=document.createElement("div");item.className="advanced-rule";item.dataset.enabled=rule.enabled;
+  const label=document.createElement("label"),enabled=document.createElement("input"),summary=document.createElement("span");
+  enabled.type="checkbox";enabled.checked=rule.enabled;enabled.setAttribute("aria-label",translations[lang].advancedReason(rule.id));
+  enabled.addEventListener("change",()=>changeAdvancedRules(rules.map(current=>current.id===rule.id?{...current,enabled:enabled.checked}:current)));
+  summary.textContent=rule.id+". "+advancedSummary(rule);label.append(enabled,summary);
+  const footer=document.createElement("div");footer.className="advanced-footer";
+  const count=document.createElement("span");count.textContent=rule.enabled?translations[lang].advancedMatches(format(rows.filter(row=>C.ruleMatches(row,rule)).length)):t("advancedOff");
+  const edit=document.createElement("button");edit.type="button";edit.textContent=t("advancedEdit");edit.addEventListener("click",()=>openAdvanced(rule));
+  const remove=document.createElement("button");remove.type="button";remove.textContent=t("advancedDelete");remove.addEventListener("click",()=>changeAdvancedRules(rules.filter(current=>current.id!==rule.id)));
+  footer.append(count,edit,remove);item.append(label,footer);list.append(item);
+ }
+}
+function renderAdvancedLabels(){
+ $("advancedLabels").replaceChildren();
+ for(const label of availableLabels){
+  const button=document.createElement("button");button.type="button";button.textContent=tagName(label);button.setAttribute("aria-pressed",advancedDraft.labels.includes(label));
+  button.addEventListener("click",()=>{advancedDraft.labels=advancedDraft.labels.includes(label)?advancedDraft.labels.filter(value=>value!==label):[...advancedDraft.labels,label];renderAdvancedLabels();});
+  $("advancedLabels").append(button);
+ }
+}
+function openAdvanced(rule=null){
+ advancedSample=sample;
+ advancedDraft=rule?JSON.parse(JSON.stringify(rule)):{id:null,enabled:true,labels:[...availableLabels],length:{operator:"any",value:5000},coverage:{operator:"any",value:10}};
+ $("advancedDialogTitle").textContent=t(rule?"editAdvanced":"newAdvanced");$("advancedError").hidden=true;
+ renderAdvancedLabels();
+ for(const field of ["Length","Coverage"]){
+  const condition=advancedDraft[field.toLowerCase()],select=$("advanced"+field+"Operator"),input=$("advanced"+field+"Value");select.replaceChildren();
+  for(const operator of ["any",">",">=","<","<="]){const option=document.createElement("option");option.value=operator;option.textContent=operator==="any"?t("advancedAny"):({">=":"≥","<=":"≤"}[operator]||operator);select.append(option);}
+  select.value=condition.operator;input.value=condition.value;input.disabled=condition.operator==="any";
+ }
+ $("advancedDialog").showModal();
+}
+for(const field of ["Length","Coverage"])$("advanced"+field+"Operator").addEventListener("change",()=>{$("advanced"+field+"Value").disabled=$("advanced"+field+"Operator").value==="any";});
+$("advancedForm").addEventListener("submit",event=>{
+ event.preventDefault();
+ if(!$("advancedForm").reportValidity()||sample!==advancedSample)return;
+ for(const field of ["Length","Coverage"])advancedDraft[field.toLowerCase()]={operator:$("advanced"+field+"Operator").value,value:Number($("advanced"+field+"Value").value)};
+ let message="";
+ if(!advancedDraft.labels.length)message=t("advancedSelectLabel");
+ else if(advancedDraft.labels.length===availableLabels.length&&advancedDraft.length.operator==="any"&&advancedDraft.coverage.operator==="any")message=t("advancedSpecify");
+ if(message){$("advancedError").textContent=message;$("advancedError").hidden=false;return;}
+ const rules=state().advancedRules;
+ const nextId=rules.reduce((maximum,rule)=>Math.max(maximum,rule.id),0)+1;
+ const draft={...advancedDraft,id:advancedDraft.id??nextId};
+ let next;
+ try{next=C.rules(advancedDraft.id===null?[...rules,draft]:rules.map(rule=>rule.id===draft.id?draft:rule),availableLabels);}
+ catch(e){$("advancedError").textContent=t("advancedInvalid");$("advancedError").hidden=false;return;}
+ $("advancedDialog").close();changeAdvancedRules(next);
+});
+$("addAdvanced").addEventListener("click",()=>openAdvanced());
+for(const id of ["closeAdvanced","cancelAdvanced"])$(id).addEventListener("click",()=>$("advancedDialog").close());
 function scheduleRefresh(){
  if(!refreshFrame)refreshFrame=requestAnimationFrame(()=>refresh());
 }
@@ -371,7 +524,7 @@ function refresh(){
  $("currentStatus").textContent=t(s.reviewed?"reviewed":"unreviewed")+"; "+(PROJECT.samples.findIndex(m=>m.sample_id===sample)+1)+" / "+PROJECT.samples.length;
  $("mode").textContent=!s.retain_sample?t("sampleExcluded"):ok?t(s.mode==="default"?"defaultMode":"manualMode"):t("invalid");
  $("reference").textContent=ref.n?translations[lang].reference(format(ref.n),compact(ref.median),compact(ref.min),compact(ref.max),compact(ref.cutoff)):t("noReference");
- renderLabels();updateSelectionControls();
+ renderLabels();renderAdvancedRules();updateSelectionControls();
  $("groupSummary").replaceChildren();
  const meta=metadata.get(sample);
  renderGroup(t("allSequences"),rows.length,meta.bp,result?result.kept:null,result?result.keptBp:null,true);
@@ -401,7 +554,7 @@ for(const id of ["length","coverage","maxCoverage"])$(id).addEventListener("inpu
 $("maxCoverage").addEventListener("change",()=>{if(state().maxCoverage===null)$("maxCoverage").value=maxCoverageValue(state());});
 $("retainSample").addEventListener("change",()=>{if(!loaded)return;state().retain_sample=$("retainSample").checked;invalidate();refresh();});
 $("note").addEventListener("input",()=>{state().note=$("note").value;scheduleSave();});
-$("reset").addEventListener("click",()=>{Object.assign(state(),{length:500,coverage:ref.cutoff,maxCoverage:null,labels:[...availableLabels],excludedIds:new Set(),mode:"default"});selectedIds=new Set();invalidate();$("length").value=500;$("coverage").value=ref.cutoff===null?"":ref.cutoff;$("maxCoverage").value=maxCoverageValue(state());refresh();});
+$("reset").addEventListener("click",()=>{Object.assign(state(),{length:500,coverage:ref.cutoff,maxCoverage:null,labels:[...availableLabels],excludedIds:new Set(),advancedRules:[],mode:"default"});selectedIds=new Set();invalidate();$("length").value=500;$("coverage").value=ref.cutoff===null?"":ref.cutoff;$("maxCoverage").value=maxCoverageValue(state());refresh();});
 $("search").addEventListener("input",listSamples);$("onlyPending").addEventListener("click",()=>{$("onlyPending").setAttribute("aria-pressed",String($("onlyPending").getAttribute("aria-pressed")!=="true"));listSamples();});
 $("previous").addEventListener("click",()=>{const i=PROJECT.samples.findIndex(m=>m.sample_id===sample);if(i>0)selectSample(PROJECT.samples[i-1].sample_id);});
 $("confirm").addEventListener("click",()=>{
@@ -412,7 +565,7 @@ $("confirm").addEventListener("click",()=>{
  if(next)selectSample(next.sample_id);else{listSamples();refresh();setStatus([...settings.values()].every(s=>s.reviewed)?"allDone":"lastSample");}
 });
 document.addEventListener("keydown",e=>{
- if(e.repeat||e.altKey||e.ctrlKey||e.metaKey||bulkBusy||!loaded)return;
+ if(e.repeat||e.altKey||e.ctrlKey||e.metaKey||bulkBusy||!loaded||$("advancedDialog").open)return;
  if(e.target instanceof Element&&e.target.closest("input,textarea,select,[contenteditable],[role=separator]"))return;
  if(["Delete","Backspace"].includes(e.key)&&selectedIds.size){e.preventDefault();removeSelectedPoints();return;}
  if(e.key==="Escape"){e.preventDefault();clearPointSelection();return;}
@@ -624,7 +777,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     const selectedLabels = new Set(!result ? availableLabels : settings.retain_sample ? settings.labels : []);
     const geometryKey = [g.w, g.h, dpr, g.x.a, g.x.b, g.y.b].join("/");
     const selectionKey = availableLabels.map(label => selectedLabels.has(label)).join(",");
-    if (pointLayers?.geometryKey === geometryKey && pointLayers.selectionKey === selectionKey && pointLayers.excludedIds === settings.excludedIds) return;
+    if (pointLayers?.geometryKey === geometryKey && pointLayers.selectionKey === selectionKey && pointLayers.excludedIds === settings.excludedIds && pointLayers.advancedRules === settings.advancedRules) return;
 
     let order = pointLayers?.order;
     if (!order) {
@@ -667,14 +820,14 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
       context.globalAlpha = .55;
       for (const index of order) {
         const point = hoverPoints[index];
-        const highlighted = appearance === 1 && selectedLabels.has(point.r.label) && !settings.excludedIds?.has(point.r.id);
+        const highlighted = appearance === 1 && selectedLabels.has(point.r.label) && !settings.excludedIds?.has(point.r.id) && !(settings.advancedRules||[]).some(rule=>rule.enabled&&C.ruleMatches(point.r,rule));
         context.fillStyle = highlighted ? colors[point.label] : fadedColors[point.label];
         context.beginPath();
         context.arc(point.x, point.y, 2, 0, Math.PI * 2);
         context.fill();
       }
     }
-    pointLayers = {geometryKey, selectionKey, order, layers, excludedIds: settings.excludedIds};
+    pointLayers = {geometryKey, selectionKey, order, layers, excludedIds: settings.excludedIds, advancedRules: settings.advancedRules};
   }
   function drawPoints(ctx, g, settings, lx, cy, uy) {
     const left = Math.max(g.left, Math.min(g.right, lx));
