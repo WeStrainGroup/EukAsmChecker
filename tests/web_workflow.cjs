@@ -134,14 +134,14 @@ function mockCanvas() {
   const context = {
     scale() {}, beginPath() {},
     clearRect() {canvas.points = [];},
-    arc(x, y) {this.point = {x, y}; rasterizedPoints++;},
+    arc(x, y, radius) {this.point = {x, y, radius}; rasterizedPoints++;},
     fill() {canvas.points.push({...this.point, color: this.fillStyle, alpha: this.globalAlpha});}
   };
   canvas.getContext = () => context;
   return canvas;
 }
 const renderContext = {
-  C:EACCore,pointLayers: null, hoverPoints: [], rows: renderRows,
+  C:EACCore,pointPercent:100,pointLayers: null, hoverPoints: [], rows: renderRows,
   availableLabels: ["eukaryota", "other", "NA"], labelColor: index => normalPalette[index],
   document: {createElement: mockCanvas}
 };
@@ -194,6 +194,17 @@ assert.deepEqual(Array.from(renderContext.pointLayers.order),Array.from(ruleCach
 const afterRulePaint=rasterizedPoints;
 renderContext.preparePointLayers(geometry,1,{...withRules,coverage:11});
 assert.equal(rasterizedPoints,afterRulePaint);
+// Point size changes both appearances without changing point order or filter results.
+const orderBeforeSize=Array.from(renderContext.pointLayers.order);
+const resultBeforeSize=JSON.stringify(renderContext.result);
+for(const [percent,radius] of [[200,4],[50,1]]){
+ renderContext.pointPercent=percent;
+ renderContext.preparePointLayers(geometry,1,withRules);
+ assert(renderContext.pointLayers.layers.every(layer=>layer.canvas.points.every(point=>point.radius===radius)));
+ assert.deepEqual(Array.from(renderContext.pointLayers.order),orderBeforeSize);
+ assert.equal(JSON.stringify(renderContext.result),resultBeforeSize);
+}
+renderContext.pointPercent=100;
 // Fully overlapping, initially label-sorted input must be interleaved on both layers.
 const overlapRows = ["eukaryota", "other", "NA"].flatMap(label =>
   Array.from({length: 30}, () => ({length: 1000, coverage: 20, label})));

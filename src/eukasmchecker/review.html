@@ -44,7 +44,7 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 #labels{display:flex;gap:5px;flex-wrap:wrap}#labels button{min-width:46px}
 #labels button:disabled{background:#f4f4f6;border-color:#e5e5e8;color:#a1a1a6;opacity:1}
 .resetline{display:flex;flex-direction:column;align-items:stretch;gap:0;min-width:0}
-.resetline #mode{font-size:11px;line-height:16px;min-height:16px;margin-bottom:7px}.resetline button{white-space:nowrap}
+.resetline button{white-space:nowrap}
 .controls input[type=range]{appearance:none;-webkit-appearance:none;width:100%;height:18px;margin:6px 0 0;padding:0;border:0;background:transparent;cursor:pointer;accent-color:#555}
 .controls input[type=range]::-webkit-slider-runnable-track{height:2px;background:#d2d2d7;border-radius:1px}
 .controls input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:10px;height:10px;margin-top:-4px;border:0;border-radius:50%;background:#929297}
@@ -52,7 +52,7 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 .controls input[type=range]::-moz-range-thumb{width:10px;height:10px;border:0;border-radius:50%;background:#929297}
 .controls input[type=range]::-moz-range-progress{height:2px;background:#d2d2d7}
 .controls input[type=range]:hover::-webkit-slider-thumb{background:#6e6e73}
-.distribution-control select{width:100%;height:32px;padding:5px 7px;font-size:11px}.plot-size-control>label{margin:0 0 7px;white-space:normal}
+.distribution-control select{width:100%;height:32px;padding:5px 7px;font-size:12px}.size-control{display:flex;align-items:center;justify-content:space-between;gap:8px}.controls .size-control label{margin:0;min-height:0;white-space:nowrap}.controls .size-control input{flex:0 0 56px;width:56px}
 .coverage-heading label{cursor:help}
 #reference{position:fixed;z-index:50;width:290px;max-width:calc(100vw - 24px);padding:12px 14px;margin:0;border:1px solid #dedee2;border-radius:8px;background:#fff;box-shadow:0 4px 16px #00000014;font-size:11px;line-height:1.6;pointer-events:none}
 .plotbar{display:flex;align-items:flex-start;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin:0 auto 6px;padding-left:66px}
@@ -82,16 +82,16 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 @container(max-width:760px){.topline{flex-wrap:wrap;gap:6px}.topline .toolbar{margin-left:auto}}
 @container(max-width:679px){
  .filtering-layout{display:block}.controls{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
- .controls label,.controls .control-label,.resetline #mode{min-height:32px;font-size:11px;line-height:16px}
+ .controls label,.controls .control-label{min-height:32px;font-size:11px;line-height:16px}
 }
 @container(max-width:534px){.controls{grid-template-columns:repeat(2,minmax(0,1fr))}.resetline{max-width:110px}.plotbar{padding-left:0}}
-.selection-tools{display:flex;justify-content:flex-end;margin-left:auto;max-width:100%;font-size:11px}
+.selection-tools{display:flex;justify-content:flex-end;margin-left:auto;max-width:100%;font-size:12px}
 .selection-group{display:grid;gap:4px;max-width:100%}
 .selection-heading{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:0 12px;line-height:18px;text-align:right}
 .selection-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}
-.selection-tools button{font-size:11px;padding:4px 8px;min-height:27px}
-#selectionHint{color:#6e6e73}
-#selectionCount{color:#6e6e73;white-space:nowrap}
+.selection-tools button{font-size:12px;line-height:18px;padding:6px 8px;height:32px}
+#selectionHint{color:inherit}
+#selectionCount{color:inherit;white-space:nowrap}
 #selectionBox{position:absolute;border:1px solid #515157;background:#51515712;pointer-events:none;z-index:3}
 
 .advanced-title{font-size:12px;font-weight:400;line-height:18px;margin:0 0 7px}
@@ -126,7 +126,7 @@ main{height:100%;width:100%;min-width:0;margin:0 auto;padding:0 36px 24px;overfl
 <main><div id="message" role="alert"></div><div class="topline"><div class="sample-heading"><h2 id="chartTitle"></h2><span id="currentStatus"></span></div><div class="toolbar"><label class="sample-retention"><input id="retainSample" type="checkbox" checked disabled><span data-i18n="retainSample">Retain sample</span></label><button id="previous" type="button" data-i18n="previous">Previous sample</button><button id="confirm" class="primary" type="button" disabled data-i18n="confirm">Confirm &amp; next</button></div></div><div id="loading"></div>
 <div id="sampleContent" hidden>
 <details class="module" id="filteringModule" open><summary data-i18n="filteringTitle">Filtering</summary>
-<div class="filtering-layout"><div class="controls"><div class="threshold-control"><label for="length" data-i18n="minLength">Minimum length (bp)</label><input id="length" type="number" min="0" step="1"><input id="lengthRange" type="range" min="0" max="1000"></div><div class="threshold-control"><div class="coverage-heading"><label id="coverageHeading" for="coverage" data-i18n="minCoverage" tabindex="0" aria-describedby="reference">Minimum coverage (×)</label><div id="reference" role="tooltip" hidden></div></div><input id="coverage" type="number" min="0" step="1"><input id="coverageRange" type="range" min="0" max="1000"></div><div class="threshold-control"><label for="maxCoverage" data-i18n="maxCoverage">Maximum coverage (×)</label><input id="maxCoverage" type="number" min="0" step="1"><input id="maxCoverageRange" type="range" min="0" max="1000"></div><div class="label-control"><span class="control-label" id="labelTitle" data-i18n="labels">EukContigMiner labels</span><div id="labels" role="group" aria-labelledby="labelTitle"></div></div><div class="advanced-controls"><h3 class="advanced-title" data-i18n="advancedTitle">Advanced rules</h3><div id="advancedList" class="advanced-list" hidden></div><button id="addAdvanced" type="button" data-i18n="addAdvanced">Add exclusion rule</button></div><div class="resetline"><span id="mode"></span><button id="reset" type="button" data-i18n="reset">Reset defaults</button></div><div class="distribution-control"><label for="distributionMode" data-i18n="distributionMode">Distributions</label><select id="distributionMode"><option value="filter" data-i18n="distributionFilter">filtering</option><option value="label" data-i18n="distributionLabels">all labels</option><option value="euk-other" selected data-i18n="distributionEukOther">euk + other</option></select></div><div class="plot-size-control"><label for="plotPercent" data-i18n="plotSizeLabel">Plot size (%)</label><input id="plotPercent" type="number" min="50" max="100" step="1" value="100"></div></div>
+<div class="filtering-layout"><div class="controls"><div class="threshold-control"><label for="length" data-i18n="minLength">Minimum length (bp)</label><input id="length" type="number" min="0" step="1"><input id="lengthRange" type="range" min="0" max="1000"></div><div class="threshold-control"><div class="coverage-heading"><label id="coverageHeading" for="coverage" data-i18n="minCoverage" tabindex="0" aria-describedby="reference">Minimum coverage (×)</label><div id="reference" role="tooltip" hidden></div></div><input id="coverage" type="number" min="0" step="1"><input id="coverageRange" type="range" min="0" max="1000"></div><div class="threshold-control"><label for="maxCoverage" data-i18n="maxCoverage">Maximum coverage (×)</label><input id="maxCoverage" type="number" min="0" step="1"><input id="maxCoverageRange" type="range" min="0" max="1000"></div><div class="label-control"><span class="control-label" id="labelTitle" data-i18n="labels">EukContigMiner labels</span><div id="labels" role="group" aria-labelledby="labelTitle"></div></div><div class="advanced-controls"><h3 class="advanced-title" data-i18n="advancedTitle">Advanced rules</h3><div id="advancedList" class="advanced-list" hidden></div><button id="addAdvanced" type="button" data-i18n="addAdvanced">Add exclusion rule</button></div><div class="resetline"><button id="reset" type="button" data-i18n="reset">Reset defaults</button></div><div class="distribution-control"><label for="distributionMode" data-i18n="distributionMode">Distributions</label><select id="distributionMode"><option value="filter" data-i18n="distributionFilter">filtering</option><option value="label" data-i18n="distributionLabels">all labels</option><option value="euk-other" selected data-i18n="distributionEukOther">euk + other</option></select></div><div class="size-control"><label for="pointPercent" data-i18n="pointSizeLabel">Point size (%)</label><input id="pointPercent" type="number" min="25" max="300" step="1" value="100"></div><div class="size-control"><label for="plotPercent" data-i18n="plotSizeLabel">Plot size (%)</label><input id="plotPercent" type="number" min="50" max="100" step="1" value="100"></div></div>
 <div class="filtering-plot"><div class="plotbar"><div class="legend" id="legend"></div>
 <div class="selection-tools"><div class="selection-group"><div class="selection-heading"><span id="selectionHint" data-i18n="selectPoints">Click or drag to manually select</span><span id="selectionCount" aria-live="polite"></span></div><div class="selection-actions"><button id="removeSelected" type="button" disabled data-i18n="removeSelected">Remove selected</button><button id="restoreSelected" type="button" disabled data-i18n="restoreSelected">Restore selected</button></div></div></div></div>
 <div id="plot"><canvas id="canvas" role="img" tabindex="0"></canvas><div id="selectionBox" hidden></div><div id="tooltip" class="tooltip" role="tooltip" hidden></div></div>
@@ -206,7 +206,7 @@ maxCoverage:"Maximum coverage (×)",adjustMaxCoverage:"Adjust maximum coverage",
 markAll:"Mark all reviewed",markingAll:"Marking reviewed…",previousShortcut:"Previous sample (←)",confirmShortcut:"Confirm & next (→)",batchDone:(n,skip)=>n+" sample"+(n===1?"":"s")+" marked reviewed"+(skip?"; "+skip+" sample"+(skip===1?" still needs":"s still need")+" valid filters.":"."),
 retainSample:"Retain sample",sampleExcluded:"Sample excluded",confirmExcluded:"Confirm exclusion & next",excluded_sample:"sample excluded",
 distributionMode:"Distributions",distributionFilter:"filtering",distributionLabels:"all labels",distributionEukOther:"euk + other",
-inactiveLabels:"Greyed out: no sequences meet the length and coverage thresholds.",noEligible:"No sequences meet the current length and coverage thresholds.",summaryTitle:"Summary",filteringTitle:"Filtering",allSequences:"All sequences",labelled:"Labelled ",coverageStats:"Reads coverage (×): median; range",lengthStats:"Sequence length (bp): median; range",summaryHelp:"Summary cells show sequence count; total length (Mb). Percentages use the original count or length in the same row. Coverage and length statistics show median; minimum–maximum. Each sequence has equal weight.",originalColumn:"Original",resizeSidebar:"Resize sample sidebar",plotSizeLabel:"Plot size (%)",original:"Before filtering",
+inactiveLabels:"Greyed out: no sequences meet the length and coverage thresholds.",noEligible:"No sequences meet the current length and coverage thresholds.",summaryTitle:"Summary",filteringTitle:"Filtering",allSequences:"All sequences",labelled:"Labelled ",coverageStats:"Reads coverage (×): median; range",lengthStats:"Sequence length (bp): median; range",summaryHelp:"Summary cells show sequence count; total length (Mb). Percentages use the original count or length in the same row. Coverage and length statistics show median; minimum–maximum. Each sequence has equal weight.",originalColumn:"Original",resizeSidebar:"Resize sample sidebar",pointSizeLabel:"Point size (%)",plotSizeLabel:"Plot size (%)",original:"Before filtering",
 ruleDisplay:"Precision: coverage is the per-sequence mean. Displayed values are rounded; filtering uses original values and includes threshold endpoints.",
 ruleDistribution:"Distribution view and plot size control the display.",
 title:"EukAsmChecker",language:"Language",restore:"Import decisions",save:"Save decisions",search:"Search samples",onlyPending:"Unreviewed only",samples:"samples",reviewed:"Reviewed",unreviewed:"Unreviewed",previous:"Previous sample",confirm:"Confirm & next",confirmEmpty:"Confirm removal of all & next",minLength:"Minimum length (bp)",minCoverage:"Minimum coverage (×)",labels:"EukContigMiner labels",reset:"Reset defaults",note:"Note",notePlaceholder:"Record the rationale for this sample",rulesTitle:"Rule",
@@ -215,7 +215,7 @@ ruleThreshold:"Retention: sequences must meet the length, coverage and label fil
 ruleLabels:"Label selection is an additional AND condition: retain a sequence only if its label is among the selected labels. All labels are selected by default. Any nonempty subset can be selected. NA means that no ECM classification is available; in this dataset it is the native output for sequences <500 bp. All original sequences are plotted and counted, without subsampling.",
 ruleOutput:"Confirm each sample and save decisions before applying the filters.",
 ruleInterpretation:"ECM labels: predictions are less reliable for short contigs (500–1,000 bp, test F1 ≈0.9 at 1% eukaryotic prevalence). Short contigs in the main cluster may be labelled other; consider coverage too. Below 500 bp, labels remain NA.",
-autoSaved:"Progress saved in this browser",saveBackup:"Use Save decisions to back up your progress",restored:"Review progress restored",noMatches:"No matching samples",loading:"Loading sample…",loadFailed:"Sample could not be loaded",loadHelp:"Keep index.html and the data directory together.",wrongData:"Sample data do not match the project manifest.",wrongStats:"Sample statistics do not match the project manifest.",wrongDocument:"Decisions do not match this dataset.",wrongSample:"Sample or input fingerprint mismatch: ",wrongFields:"Invalid review fields: ",wrongThresholds:"Invalid thresholds: ",wrongReviewed:"Reviewed sample has invalid parameters or counts: ",restoredMismatch:"Restored counts differ from the current filters; this sample is now unreviewed.",allDone:"All samples reviewed. Save your decisions.",lastSample:"Last sample. Some samples remain unreviewed.",autoRestoreFailed:"Automatic restore failed: ",restoreHelp:" Import your exported decisions to restore progress.",invalid:"Set valid thresholds and select at least one label.",defaultMode:"Default thresholds",manualMode:"Custom filters",threshold:"Threshold",faded:"Faded = removed",xAxis:"Sequence length (bp)",yAxis:"Reads coverage (×)",plotAlt:"Sequence length versus reads coverage, grouped by ECM label. Drag red threshold lines to change filters.",adjustLength:"Adjust minimum length",adjustCoverage:"Adjust minimum coverage",pendingThresholds:"Pending: set valid filters",retained:"Retained",removed:"Removed",passes:"meets all selected criteria",short_length:"length below minimum",low_coverage:"coverage below minimum",excluded_label:"ECM label not selected",noReference:"No original sequences have both ECM label euk and length >10,000 bp. A reference median and range cannot be estimated; set the minimum coverage manually.",
+autoSaved:"Progress saved in this browser",saveBackup:"Use Save decisions to back up your progress",restored:"Review progress restored",noMatches:"No matching samples",loading:"Loading sample…",loadFailed:"Sample could not be loaded",loadHelp:"Keep index.html and the data directory together.",wrongData:"Sample data do not match the project manifest.",wrongStats:"Sample statistics do not match the project manifest.",wrongDocument:"Decisions do not match this dataset.",wrongSample:"Sample or input fingerprint mismatch: ",wrongFields:"Invalid review fields: ",wrongThresholds:"Invalid thresholds: ",wrongReviewed:"Reviewed sample has invalid parameters or counts: ",restoredMismatch:"Restored counts differ from the current filters; this sample is now unreviewed.",allDone:"All samples reviewed. Save your decisions.",lastSample:"Last sample. Some samples remain unreviewed.",autoRestoreFailed:"Automatic restore failed: ",restoreHelp:" Import your exported decisions to restore progress.",invalid:"Set valid thresholds and select at least one label.",threshold:"Threshold",faded:"Faded = removed",xAxis:"Sequence length (bp)",yAxis:"Reads coverage (×)",plotAlt:"Sequence length versus reads coverage, grouped by ECM label. Drag red threshold lines to change filters.",adjustLength:"Adjust minimum length",adjustCoverage:"Adjust minimum coverage",pendingThresholds:"Pending: set valid filters",retained:"Retained",removed:"Removed",passes:"meets all selected criteria",short_length:"length below minimum",low_coverage:"coverage below minimum",excluded_label:"ECM label not selected",noReference:"No original sequences have both ECM label euk and length >10,000 bp. A reference median and range cannot be estimated; set the minimum coverage manually.",
 reference:(n,mn,lo,hi,cut)=>"The reference set contains "+n+" original sequences labelled euk with length >10 kb. Their median reads coverage is "+mn+"× (range: "+lo+"–"+hi+"×). The default minimum coverage is "+cut+"×."
 },
 zh:{
@@ -225,7 +225,7 @@ maxCoverage:"最高 coverage（×）",adjustMaxCoverage:"调整最高 coverage",
 markAll:"全部标记为已审阅",markingAll:"正在标记…",previousShortcut:"上一样本（←）",confirmShortcut:"确认并下一样本（→）",batchDone:(n,skip)=>"已将 "+n+" 个样本标记为已审阅"+(skip?"；"+skip+" 个样本仍需设置有效筛选条件。":"。"),
 retainSample:"保留样本",sampleExcluded:"已排除样本",confirmExcluded:"确认排除并继续",excluded_sample:"整个样本已排除",
 distributionMode:"分布",distributionFilter:"筛选状态",distributionLabels:"全部标签",distributionEukOther:"euk + other",
-inactiveLabels:"灰色标签：没有片段满足当前长度及 coverage 阈值。",noEligible:"没有片段满足当前长度及 coverage 阈值。",summaryTitle:"摘要",filteringTitle:"筛选",allSequences:"全部片段",labelled:"标签为 ",coverageStats:"Reads coverage（×）：中位数；范围",lengthStats:"片段长度（bp）：中位数；范围",summaryHelp:"摘要单元格依次显示片段数；总长度（Mb）。百分比分别以同行原始片段数或总长度为分母。Coverage 和长度统计依次显示中位数；最小值–最大值，每条片段等权。",originalColumn:"原始",resizeSidebar:"调整样本侧栏宽度",plotSizeLabel:"图形大小（%）",original:"筛选前",
+inactiveLabels:"灰色标签：没有片段满足当前长度及 coverage 阈值。",noEligible:"没有片段满足当前长度及 coverage 阈值。",summaryTitle:"摘要",filteringTitle:"筛选",allSequences:"全部片段",labelled:"标签为 ",coverageStats:"Reads coverage（×）：中位数；范围",lengthStats:"片段长度（bp）：中位数；范围",summaryHelp:"摘要单元格依次显示片段数；总长度（Mb）。百分比分别以同行原始片段数或总长度为分母。Coverage 和长度统计依次显示中位数；最小值–最大值，每条片段等权。",originalColumn:"原始",resizeSidebar:"调整样本侧栏宽度",pointSizeLabel:"散点大小（%）",plotSizeLabel:"图形大小（%）",original:"筛选前",
 ruleDisplay:"数值精度：coverage 为逐序列平均值。显示时取整，筛选使用原始值，包含阈值端点。",
 ruleDistribution:"分布模式和图形大小控制显示。",
 title:"EukAsmChecker",language:"语言",restore:"导入审阅结果",save:"保存审阅结果",search:"搜索样本",onlyPending:"只看未审阅",samples:"个样本",reviewed:"已审阅",unreviewed:"未审阅",previous:"上一样本",confirm:"确认并下一样本",confirmEmpty:"确认全部移除并继续",minLength:"最小长度（bp）",minCoverage:"最低 coverage（×）",labels:"EukContigMiner（ECM）标签",reset:"恢复默认设置",note:"备注",notePlaceholder:"记录这个样本的筛选依据",rulesTitle:"规则",
@@ -234,7 +234,7 @@ ruleThreshold:"保留条件：序列须同时满足长度、coverage 和标签�
 ruleLabels:"标签选择是额外的 AND 条件：片段标签必须属于所选标签之一。默认选中全部标签，可选任意非空组合。NA 表示没有可用的 ECM 分类；在本数据集中，它是 <500 bp 片段的原生输出。所有原始片段均参与绘图和统计，不进行抽样。",
 ruleOutput:"逐样本确认并保存 decisions，再应用筛选。",
 ruleInterpretation:"ECM 标签：短序列预测较不可靠（500–1,000 bp、真核比例 1% 时测试 F1 约 0.9），主簇内短序列可能被标为 other，需结合 coverage 判断。500 bp 以下保留 NA。",
-autoSaved:"进度已保存在此浏览器",saveBackup:"请导出审阅结果备份进度",restored:"已恢复审阅进度",noMatches:"没有匹配的样本",loading:"正在读取样本…",loadFailed:"样本读取失败",loadHelp:"请保持 index.html 与 data 文件夹在同一目录。",wrongData:"样本数据与项目清单不匹配。",wrongStats:"样本统计与项目清单不一致。",wrongDocument:"审阅文件与当前项目数据不匹配。",wrongSample:"样本或输入指纹不匹配：",wrongFields:"审阅字段无效：",wrongThresholds:"阈值无效：",wrongReviewed:"已审阅样本缺少有效参数或统计：",restoredMismatch:"恢复的统计与当前筛选条件不一致，该样本已标为未审阅。",allDone:"全部样本已审阅，请导出审阅结果。",lastSample:"已到最后一个样本，仍有样本尚未审阅。",autoRestoreFailed:"自动恢复失败：",restoreHelp:"可导入已保存的审阅文件恢复进度。",invalid:"请设置有效阈值并选择至少一个标签。",defaultMode:"默认阈值",manualMode:"已手动调整筛选条件",threshold:"阈值",faded:"淡色 = 移除",xAxis:"片段长度（bp）",yAxis:"Reads coverage（×）",plotAlt:"按 ECM 标签区分的长度与 reads coverage 散点图，可拖动红色阈值线调整筛选条件。",adjustLength:"调整最小长度",adjustCoverage:"调整最低 coverage",pendingThresholds:"待判断：请设置有效筛选条件",retained:"保留",removed:"移除",passes:"满足全部所选条件",short_length:"长度低于下限",low_coverage:"coverage 低于下限",excluded_label:"未选择该 ECM 标签",noReference:"没有同时满足 ECM 标签为 euk 且长度 >10,000 bp 的原始片段，无法计算参考中位数和范围；请手动设置最低 coverage。",
+autoSaved:"进度已保存在此浏览器",saveBackup:"请导出审阅结果备份进度",restored:"已恢复审阅进度",noMatches:"没有匹配的样本",loading:"正在读取样本…",loadFailed:"样本读取失败",loadHelp:"请保持 index.html 与 data 文件夹在同一目录。",wrongData:"样本数据与项目清单不匹配。",wrongStats:"样本统计与项目清单不一致。",wrongDocument:"审阅文件与当前项目数据不匹配。",wrongSample:"样本或输入指纹不匹配：",wrongFields:"审阅字段无效：",wrongThresholds:"阈值无效：",wrongReviewed:"已审阅样本缺少有效参数或统计：",restoredMismatch:"恢复的统计与当前筛选条件不一致，该样本已标为未审阅。",allDone:"全部样本已审阅，请导出审阅结果。",lastSample:"已到最后一个样本，仍有样本尚未审阅。",autoRestoreFailed:"自动恢复失败：",restoreHelp:"可导入已保存的审阅文件恢复进度。",invalid:"请设置有效阈值并选择至少一个标签。",threshold:"阈值",faded:"淡色 = 移除",xAxis:"片段长度（bp）",yAxis:"Reads coverage（×）",plotAlt:"按 ECM 标签区分的长度与 reads coverage 散点图，可拖动红色阈值线调整筛选条件。",adjustLength:"调整最小长度",adjustCoverage:"调整最低 coverage",pendingThresholds:"待判断：请设置有效筛选条件",retained:"保留",removed:"移除",passes:"满足全部所选条件",short_length:"长度低于下限",low_coverage:"coverage 低于下限",excluded_label:"未选择该 ECM 标签",noReference:"没有同时满足 ECM 标签为 euk 且长度 >10,000 bp 的原始片段，无法计算参考中位数和范围；请手动设置最低 coverage。",
 reference:(n,mn,lo,hi,cut)=>"参考集合包含 "+n+" 条标签为 euk 且长度 >10 kb 的原始序列。它们的 reads coverage 中位数为 "+mn+"×，范围为 "+lo+"–"+hi+"×。默认最低 coverage 为 "+cut+"×。"
 }};
 Object.assign(translations.en,{
@@ -255,7 +255,7 @@ Object.assign(translations.en,{
  advancedLength:"Length (bp)",advancedCoverage:"Coverage (×)",advancedLabels:"Labels",advancedAny:"Any",advancedEdit:"Edit",advancedDelete:"Delete",advancedOff:"Off",
  advancedSelectLabel:"Select at least one label.",advancedSpecify:"Choose a label subset, length condition or coverage condition.",advancedInvalid:"Invalid advanced rule.",
  advancedMatches:n=>n+" matched",advancedReason:id=>"advanced rule "+id,
- ruleAdvanced:"Advanced rules apply to this sample. Conditions within a rule use AND; rules use OR. Reset defaults clears the rules."
+ ruleAdvanced:"Advanced rules apply to this sample. Conditions use AND within each rule and OR between rules. Reset defaults clears the rules."
 });
 Object.assign(translations.zh,{
  advancedTitle:"高级规则",addAdvanced:"添加排除规则",newAdvanced:"新增排除规则",editAdvanced:"编辑排除规则",
@@ -522,7 +522,6 @@ function refresh(){
  $("markAll").disabled=bulkBusy;$("retainSample").disabled=false;$("retainSample").checked=s.retain_sample;
  $("confirm").disabled=!ok;$("confirm").textContent=t(!s.retain_sample?"confirmExcluded":result?.kept===0?"confirmEmpty":"confirm");
  $("currentStatus").textContent=t(s.reviewed?"reviewed":"unreviewed")+"; "+(PROJECT.samples.findIndex(m=>m.sample_id===sample)+1)+" / "+PROJECT.samples.length;
- $("mode").textContent=!s.retain_sample?t("sampleExcluded"):ok?t(s.mode==="default"?"defaultMode":"manualMode"):t("invalid");
  $("reference").textContent=ref.n?translations[lang].reference(format(ref.n),compact(ref.median),compact(ref.min),compact(ref.max),compact(ref.cutoff)):t("noReference");
  renderLabels();renderAdvancedRules();updateSelectionControls();
  $("groupSummary").replaceChildren();
@@ -608,7 +607,8 @@ function drawSelectedPoints(ctx,g){
  if(!selectedIds.size)return;
  ctx.save();ctx.beginPath();ctx.rect(g.left,g.top,g.right-g.left,g.bottom-g.top);ctx.clip();ctx.beginPath();
  for(const point of hoverPoints)if(selectedIds.has(point.r.id)){
-  ctx.moveTo(point.x+4,point.y);ctx.arc(point.x,point.y,4,0,Math.PI*2);
+  const radius=2*pointPercent/100+2;
+  ctx.moveTo(point.x+radius,point.y);ctx.arc(point.x,point.y,radius,0,Math.PI*2);
  }
  ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.stroke();
  ctx.strokeStyle="#515157";ctx.lineWidth=1;ctx.stroke();ctx.restore();
@@ -685,6 +685,21 @@ splitter.addEventListener("pointerup",finishResize);splitter.addEventListener("p
 splitter.addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight"].includes(e.key)){e.preventDefault();desiredSidebar=resizeSidebar(Number(splitter.getAttribute("aria-valuenow"))+(e.key==="ArrowLeft"?-20:20));try{localStorage.setItem("genome-review-sidebar",splitter.getAttribute("aria-valuenow"));}catch(e){}}});
 window.addEventListener("resize",()=>resizeSidebar(desiredSidebar));
 $("filteringModule").addEventListener("toggle",()=>{drag=null;$("tooltip").hidden=true;if($("filteringModule").open)draw();});
+const pointPercentKey="genome-review-point-percent";
+let pointPercent=100;
+try{
+ const saved=Number(localStorage.getItem(pointPercentKey));
+ if(Number.isFinite(saved)&&saved>=25&&saved<=300)pointPercent=Math.round(saved);
+}catch(e){}
+$("pointPercent").value=pointPercent;
+function setPointPercent(value){
+ pointPercent=Math.max(25,Math.min(300,Math.round(Number.isFinite(value)?value:pointPercent)));
+ $("pointPercent").value=pointPercent;
+ try{localStorage.setItem(pointPercentKey,String(pointPercent));}catch(e){}
+ $("tooltip").hidden=true;draw();
+}
+$("pointPercent").addEventListener("input",event=>{const value=event.target.valueAsNumber;if(Number.isFinite(value)&&value>=25&&value<=300)setPointPercent(value);});
+$("pointPercent").addEventListener("change",event=>setPointPercent(event.target.valueAsNumber));
 const plotPercentKey="genome-review-plot-percent-scale90";
 const plotBaseScale=0.9;
 let plotPercent=100,plotMinPercent=50;
@@ -777,7 +792,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     const selectedLabels = new Set(!result ? availableLabels : settings.retain_sample ? settings.labels : []);
     const geometryKey = [g.w, g.h, dpr, g.x.a, g.x.b, g.y.b].join("/");
     const selectionKey = availableLabels.map(label => selectedLabels.has(label)).join(",");
-    if (pointLayers?.geometryKey === geometryKey && pointLayers.selectionKey === selectionKey && pointLayers.excludedIds === settings.excludedIds && pointLayers.advancedRules === settings.advancedRules) return;
+    if (pointLayers?.geometryKey === geometryKey && pointLayers.selectionKey === selectionKey && pointLayers.excludedIds === settings.excludedIds && pointLayers.advancedRules === settings.advancedRules && pointLayers.pointPercent === pointPercent) return;
 
     let order = pointLayers?.order;
     if (!order) {
@@ -791,6 +806,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     }
 
     const sameGeometry = pointLayers?.geometryKey === geometryKey;
+    const samePointSize = pointLayers?.pointPercent === pointPercent;
     const layers = sameGeometry ? pointLayers.layers : [0, 1].map(() => {
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(g.w * dpr);
@@ -814,7 +830,7 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
       return Math.round(255 + (channel - 255) * .30).toString(16).padStart(2, "0");
     }).join(""));
     for (let appearance = 0; appearance < layers.length; appearance++) {
-      if (appearance === 0 && sameGeometry) continue;
+      if (appearance === 0 && sameGeometry && samePointSize) continue;
       const context = layers[appearance].context;
       context.clearRect(0, 0, g.w, g.h);
       context.globalAlpha = .55;
@@ -823,11 +839,11 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
         const highlighted = appearance === 1 && selectedLabels.has(point.r.label) && !settings.excludedIds?.has(point.r.id) && !(settings.advancedRules||[]).some(rule=>rule.enabled&&C.ruleMatches(point.r,rule));
         context.fillStyle = highlighted ? colors[point.label] : fadedColors[point.label];
         context.beginPath();
-        context.arc(point.x, point.y, 2, 0, Math.PI * 2);
+        context.arc(point.x, point.y, 2 * pointPercent / 100, 0, Math.PI * 2);
         context.fill();
       }
     }
-    pointLayers = {geometryKey, selectionKey, order, layers, excludedIds: settings.excludedIds, advancedRules: settings.advancedRules};
+    pointLayers = {geometryKey, selectionKey, order, layers, excludedIds: settings.excludedIds, advancedRules: settings.advancedRules, pointPercent};
   }
   function drawPoints(ctx, g, settings, lx, cy, uy) {
     const left = Math.max(g.left, Math.min(g.right, lx));
