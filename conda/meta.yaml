@@ -6,10 +6,10 @@ package:
 
 source:
   url: https://github.com/WeStrainGroup/EukAsmChecker/releases/download/{{ version }}/eukasmchecker-{{ version }}.tar.gz
-  sha256: 305e46b9182ab0cde73d78edf257a3304eeb056830484b7317368e53904be43a
+  sha256: 71cd8a638a5f98583556bc79cf365c20e6a4dfd1aac61b1d11446d2f5bb25f5e
 
 build:
-  number: 1
+  number: 2
   noarch: python
   script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -v
   entry_points:

@@ -773,14 +773,14 @@ $("plotPercent").addEventListener("change",e=>setPlotPercent(e.target.valueAsNum
     if(lx>=g.left&&lx<=g.right){ctx.beginPath();ctx.moveTo(lx,marginal?8:g.top);ctx.lineTo(lx,g.bottom);ctx.stroke();}
     for(const y of [cy,uy])if(y!==null){ctx.beginPath();ctx.moveTo(g.left,y);ctx.lineTo(marginal?g.right+54:g.right,y);ctx.stroke();}
     ctx.setLineDash([]);ctx.fillStyle=thresholdColor;ctx.font='12px -apple-system, sans-serif';
-    if(s.length!==null){ctx.textAlign="left";const label=compact(s.length)+" bp",tw=ctx.measureText(label).width,xx=Math.max(g.left+4,Math.min(g.right-tw-4,lx+6)),yy=g.top+15;ctx.fillStyle="white";ctx.fillRect(xx-3,yy-12,tw+6,17);ctx.fillStyle=thresholdColor;ctx.fillText(label,xx,yy);}
+    if(s.length!==null){ctx.textAlign="left";const label=compact(s.length)+" bp",tw=ctx.measureText(label).width,xx=Math.max(g.left+4,Math.min(g.right-tw-4,lx+6)),yy=g.top+15;ctx.fillText(label,xx,yy);}
     let lowerLabelY=null;
     for(const [y,value,isLower] of [[cy,s.coverage,true],[uy,upper,false]])if(y!==null){
       ctx.textAlign="right";const label=compact(value)+" ×";
       let yy=Math.max(g.top+15,Math.min(g.bottom-5,y-7));
       if(isLower)lowerLabelY=yy;
       else if(lowerLabelY!==null&&Math.abs(yy-lowerLabelY)<18)yy=lowerLabelY+18<=g.bottom-5?lowerLabelY+18:lowerLabelY-18;
-      ctx.fillStyle="white";const tw=ctx.measureText(label).width;ctx.fillRect(g.right-tw-10,yy-12,tw+8,17);ctx.fillStyle=thresholdColor;ctx.fillText(label,g.right-4,yy);
+      ctx.fillText(label,g.right-4,yy);
     }
     ctx.fillStyle="#6e6e73";ctx.textAlign="center";ctx.fillText(t("xAxis"),(g.left+g.right)/2,h-9);
     ctx.save();ctx.translate(17,(g.top+g.bottom)/2);ctx.rotate(-Math.PI/2);ctx.fillText(t("yAxis"),0,0);ctx.restore();
